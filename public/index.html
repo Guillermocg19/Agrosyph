@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrosyph - Acceso</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="contenedor">
+        <div class="panel-izquierdo">
+            <h1>Agrosyph</h1>
+            <p>
+                Plataforma de monitoreo y reporte de plagas para cultivos,
+                con alertas y seguimiento por microzona.
+            </p>
+        </div>
+
+        <div class="panel-derecho">
+            <div class="tabs">
+                <button id="btnLogin" class="tab activo">Iniciar sesión</button>
+                <button id="btnRegistro" class="tab">Registrarse</button>
+            </div>
+
+            <div id="formLogin" class="formulario visible">
+                <h2>Iniciar sesión</h2>
+                <form id="loginForm">
+                    <label for="loginCorreo">Correo</label>
+                    <input type="email" id="loginCorreo" placeholder="Ingresa tu correo">
+
+                    <label for="loginPassword">Contraseña</label>
+                    <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña">
+
+                    <button type="submit" class="btn-principal">Entrar</button>
+                </form>
+            </div>
+
+            <div id="formRegistro" class="formulario oculto">
+                <h2>Registro</h2>
+                <form id="registroForm">
+                    <label for="registroNombre">Nombre completo</label>
+                    <input type="text" id="registroNombre" placeholder="Ingresa tu nombre">
+
+                    <label for="registroCorreo">Correo</label>
+                    <input type="email" id="registroCorreo" placeholder="Ingresa tu correo">
+
+                    <label for="registroPassword">Contraseña</label>
+                    <input type="password" id="registroPassword" placeholder="Crea una contraseña">
+
+                    <button type="submit" class="btn-principal">Crear cuenta</button>
+                </form>
+            </div>
+
+            <p id="mensaje" class="mensaje"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

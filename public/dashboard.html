@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrosyph - Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    
+</head>
+<body>
+    <div class="dashboard">
+        <header class="topbar">
+            <div class="topbar-left">
+                <h1>Agrosyph</h1>
+                <p>Monitoreo y gestión de reportes de plagas</p>
+            </div>
+
+            <div class="topbar-right">
+                <div class="usuario-box">
+                    <span class="usuario-label">Usuario activo</span>
+                    <strong id="saludoUsuario">Bienvenido</strong>
+                </div>
+                <button id="btnCerrarSesion" class="btn-principal">Cerrar sesión</button>
+            </div>
+        </header>
+
+        <main class="dashboard-contenido">
+            <section class="resumen-grid">
+                <div class="resumen-card">
+                    <span class="resumen-titulo">Total reportes</span>
+                    <strong id="totalReportes">0</strong>
+                </div>
+
+                <div class="resumen-card">
+                    <span class="resumen-titulo">Con imagen</span>
+                    <strong id="totalConImagen">0</strong>
+                </div>
+
+                <div class="resumen-card">
+                    <span class="resumen-titulo">Mis reportes</span>
+                    <strong id="misReportes">0</strong>
+                </div>
+            </section>
+
+            <section class="panel-principal">
+                <div class="panel-izquierda">
+                    <div class="modulo-card formulario-card">
+                        <div class="modulo-header">
+                            <div>
+                                <h2 id="tituloFormulario">Nuevo reporte</h2>
+                                <p>Registra un hallazgo con sus datos principales.</p>
+                            </div>
+                        </div>
+
+                        <form id="reporteForm" enctype="multipart/form-data" class="form-grid">
+                            <input type="hidden" id="reporteId">
+                            <input type="hidden" id="latitud">
+                            <input type="hidden" id="longitud">
+
+                            <div class="campo completo">
+                                <label for="cultivo">Cultivo</label>
+                                <input type="text" id="cultivo" placeholder="Ej. Maíz">
+                            </div>
+
+                            <div class="campo">
+                                <label for="etapa">Etapa fenológica</label>
+                                <input type="text" id="etapa" placeholder="Ej. Floración">
+                            </div>
+
+                            <div class="campo">
+                                <label for="plaga">Tipo de plaga</label>
+                                <input type="text" id="plaga" placeholder="Ej. Gusano cogollero">
+                            </div>
+
+                            <div class="campo completo">
+                                <label for="ubicacion">Ubicación descriptiva</label>
+                                <input type="text" id="ubicacion" placeholder="Ej. Parcela norte, Los Mochis">
+                            </div>
+
+                            <div class="campo completo">
+                                <label>Ubicación GPS</label>
+                                <div class="acciones-ubicacion">
+                                    <button type="button" class="btn-secundario" id="btnUbicacion">Usar mi ubicación actual</button>
+                                    <span id="textoUbicacion" class="texto-ubicacion">Sin coordenadas seleccionadas</span>
+                                </div>
+                            </div>
+
+                            <div class="campo completo">
+                                <label for="descripcion">Descripción</label>
+                                <textarea id="descripcion" placeholder="Describe el hallazgo"></textarea>
+                            </div>
+
+                            <div class="campo completo">
+                                <label for="imagen">Imagen</label>
+                                <input type="file" id="imagen" accept="image/*">
+                            </div>
+
+                            <div class="acciones-formulario completo">
+                                <button type="submit" class="btn-principal" id="btnGuardar">Guardar reporte</button>
+                                <button type="button" class="btn-secundario oculto" id="btnCancelarEdicion">Cancelar edición</button>
+                            </div>
+                        </form>
+
+                        <p id="mensajeReporte" class="mensaje"></p>
+                    </div>
+                </div>
+
+                <div class="panel-derecha">
+                    <div class="modulo-card historial-card">
+                        <div class="modulo-header modulo-header-columna">
+                            <div>
+                                <h2>Historial de reportes</h2>
+                                <p>Consulta, edita o elimina los reportes registrados.</p>
+                            </div>
+
+                            <div class="herramientas-historial">
+                                <div class="filtros-vista">
+                                    <button type="button" class="btn-filtro activo" id="btnVistaTodos">Todos</button>
+                                    <button type="button" class="btn-filtro" id="btnVistaMios">Mis reportes</button>
+                                </div>
+
+                                <div class="filtros-box">
+                                    <input type="text" id="busquedaReporte" placeholder="Buscar por cultivo o plaga">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="contenedorReportes" class="lista-reportes">
+                            <p>Cargando reportes...</p>
+                        </div>
+                    </div>
+
+                    <div class="modulo-card mapa-card">
+                        <div class="modulo-header">
+                            <div>
+                                <h2>Mapa de reportes</h2>
+                                <p>Visualiza los reportes con coordenadas registradas.</p>
+                            </div>
+                        </div>
+
+                        <div id="mapaReportes"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

@@ -207,6 +207,92 @@ app.delete('/api/reportes/:id', (req, res) => {
     });
 });
 
+// ============================================================
+// AGROSYPH — Endpoints nuevos para agregar a server.js
+// Pega este contenido ANTES de la línea app.listen(...)
+// ============================================================
+
+// ── SENSOR: guardar lectura desde sensor.js ──────────────────
+app.post('/api/sensor', (req, res) => {
+    const { ph, humedad } = req.body;
+
+    if (ph === undefined || humedad === undefined) {
+        return res.status(400).json({ mensaje: 'ph y humedad son obligatorios' });
+    }
+
+    conexion.query(
+        'INSERT INTO lecturas_sensor (ph, humedad, fecha) VALUES (?, ?, NOW())',
+        [ph, humedad],
+        (error, resultado) => {
+            if (error) return res.status(500).json({ mensaje: 'Error al guardar lectura' });
+            res.status(201).json({ mensaje: 'Lectura guardada', id: resultado.insertId });
+        }
+    );
+});
+
+// ── SENSOR: obtener últimas N lecturas ───────────────────────
+app.get('/api/sensor/lecturas', (req, res) => {
+    const limite = parseInt(req.query.limite) || 20;
+
+    conexion.query(
+        'SELECT * FROM lecturas_sensor ORDER BY fecha DESC LIMIT ?',
+        [limite],
+        (error, resultados) => {
+            if (error) return res.status(500).json({ mensaje: 'Error al obtener lecturas' });
+            res.json(resultados);
+        }
+    );
+});
+
+// ── SENSOR: última lectura (para el dashboard en tiempo real) ─
+app.get('/api/sensor/ultima', (req, res) => {
+    conexion.query(
+        'SELECT * FROM lecturas_sensor ORDER BY fecha DESC LIMIT 1',
+        (error, resultados) => {
+            if (error) return res.status(500).json({ mensaje: 'Error al obtener lectura' });
+            if (resultados.length === 0) return res.json(null);
+            res.json(resultados[0]);
+        }
+    );
+});
+
+// ── PLAGAS: listar todas ─────────────────────────────────────
+app.get('/api/plagas', (req, res) => {
+    conexion.query(
+        'SELECT * FROM plagas ORDER BY nombre ASC',
+        (error, resultados) => {
+            if (error) return res.status(500).json({ mensaje: 'Error al obtener plagas' });
+            res.json(resultados);
+        }
+    );
+});
+
+// ── PLAGAS: obtener una sola plaga por ID ────────────────────
+app.get('/api/plagas/:id', (req, res) => {
+    conexion.query(
+        'SELECT * FROM plagas WHERE id = ?',
+        [req.params.id],
+        (error, resultados) => {
+            if (error) return res.status(500).json({ mensaje: 'Error al obtener plaga' });
+            if (resultados.length === 0) return res.status(404).json({ mensaje: 'Plaga no encontrada' });
+            res.json(resultados[0]);
+        }
+    );
+});
+
+// ── RECOMENDACIONES: por plaga ───────────────────────────────
+app.get('/api/plagas/:id/recomendaciones', (req, res) => {
+    conexion.query(
+        'SELECT * FROM recomendaciones WHERE plaga_id = ?',
+        [req.params.id],
+        (error, resultados) => {
+            if (error) return res.status(500).json({ mensaje: 'Error al obtener recomendaciones' });
+            res.json(resultados);
+        }
+    );
+});
+
+
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

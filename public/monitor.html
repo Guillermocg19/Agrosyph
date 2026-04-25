@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agrosyph — Monitor de Suelo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --verde:     #2d6a4f;
+    --verde-med: #40916c;
+    --verde-cla: #74c69d;
+    --verde-bg:  #d8f3dc;
+    --tierra:    #a07850;
+    --tierra-cla:#d4a574;
+    --amarillo:  #e9c46a;
+    --rojo:      #c1392b;
+    --rojo-cla:  #f4a69a;
+    --fondo:     #f7f9f5;
+    --card:      #ffffff;
+    --borde:     #e0e8e2;
+    --texto:     #1a2e22;
+    --texto-sec: #6b8c75;
+    --mono:      'DM Mono', monospace;
+    --sans:      'Space Grotesk', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--fondo);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--verde);
+    color: #fff;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -.3px; }
+  header h1 span { color: var(--verde-cla); }
+  #estado-sensor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .8rem;
+    font-family: var(--mono);
+    opacity: .85;
+  }
+  #dot-sensor {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #aaa;
+    transition: background .4s;
+  }
+  #dot-sensor.activo  { background: var(--verde-cla); box-shadow: 0 0 6px var(--verde-cla); }
+  #dot-sensor.error   { background: var(--rojo-cla); }
+
+  /* ── LAYOUT ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+  .seccion-titulo {
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--texto-sec);
+    margin-bottom: 14px;
+    margin-top: 36px;
+  }
+  .seccion-titulo:first-child { margin-top: 0; }
+
+  /* ── CARDS MÉTRICAS ── */
+  .metricas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .card-metrica {
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s;
+  }
+  .card-metrica:hover { transform: translateY(-2px); }
+  .card-metrica .etiqueta {
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--texto-sec);
+    margin-bottom: 10px;
+  }
+  .card-metrica .valor {
+    font-family: var(--mono);
+    font-size: 2.6rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--texto);
+  }
+  .card-metrica .unidad { font-size: 1rem; color: var(--texto-sec); margin-left: 2px; }
+  .card-metrica .estado-texto {
+    font-size: .78rem;
+    margin-top: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    font-weight: 500;
+  }
+  .estado-ok   { background: var(--verde-bg); color: var(--verde); }
+  .estado-warn { background: #fff3cd; color: #856404; }
+  .estado-bad  { background: #fde8e6; color: var(--rojo); }
+
+  .card-metrica .acento {
+    position: absolute;
+    right: -20px; bottom: -20px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    opacity: .06;
+  }
+  .acento-verde  { background: var(--verde); }
+  .acento-tierra { background: var(--tierra); }
+  .acento-agua   { background: #1a759f; }
+
+  .card-metrica .ultima-vez {
+    font-family: var(--mono);
+    font-size: .68rem;
+    color: var(--texto-sec);
+    margin-top: 8px;
+  }
+
+  /* ── HISTORIAL ── */
+  .card-historial {
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .historial-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .historial-header h3 { font-size: .9rem; font-weight: 600; }
+  .btn-refrescar {
+    font-family: var(--sans);
+    font-size: .75rem;
+    background: var(--verde-bg);
+    color: var(--verde);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background .2s;
+  }
+  .btn-refrescar:hover { background: var(--verde-cla); color: #fff; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  thead th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: .68rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--texto-sec);
+    border-bottom: 1px solid var(--borde);
+    font-weight: 500;
+  }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: #f0f5f1; }
+  tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    font-family: var(--mono);
+    font-size: .8rem;
+  }
+  td.ph-val { font-weight: 500; }
+  td .badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: .7rem;
+    font-weight: 500;
+    font-family: var(--sans);
+  }
+  #cargando-historial { color: var(--texto-sec); font-size: .82rem; padding: 20px 0; text-align: center; }
+
+  /* ── SECCIÓN PLAGAS ── */
+  .plagas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .card-plaga {
+    background: var(--card);
+    border: 2px solid var(--borde);
+    border-radius: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: border-color .2s, transform .2s;
+  }
+  .card-plaga:hover { border-color: var(--verde-med); transform: translateY(-2px); }
+  .card-plaga.activa { border-color: var(--verde); background: #f0faf3; }
+  .card-plaga h4 { font-size: .9rem; font-weight: 600; margin-bottom: 4px; }
+  .card-plaga p  { font-size: .75rem; color: var(--texto-sec); line-height: 1.4; }
+
+  /* ── PANEL RECOMENDACIONES ── */
+  #panel-recomendaciones {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-top: 16px;
+    animation: fadeUp .3s ease;
+  }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  #panel-recomendaciones h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+  #panel-recomendaciones .sintomas-box {
+    background: #fffbf0;
+    border-left: 3px solid var(--amarillo);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    font-size: .8rem;
+    color: #6b5a1a;
+    margin: 10px 0 16px;
+    line-height: 1.5;
+  }
+  .reco-lista { display: flex; flex-direction: column; gap: 12px; }
+  .reco-item {
+    background: var(--fondo);
+    border-radius: 10px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--verde-med);
+  }
+  .reco-item .reco-trat { font-size: .85rem; font-weight: 500; margin-bottom: 6px; }
+  .reco-item .reco-det  { font-size: .78rem; color: var(--texto-sec); font-family: var(--mono); }
+  .reco-item .reco-det span { color: var(--tierra); }
+  #btn-cerrar-panel {
+    margin-top: 16px;
+    font-family: var(--sans);
+    font-size: .78rem;
+    background: none;
+    border: 1px solid var(--borde);
+    color: var(--texto-sec);
+    padding: 6px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  #btn-cerrar-panel:hover { background: var(--fondo); }
+
+  #sin-datos {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--texto-sec);
+    font-size: .9rem;
+  }
+  #sin-datos .icono { font-size: 2.5rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Agrosyph <span>/ Monitor de Suelo</span></h1>
+  <div id="estado-sensor">
+    <div id="dot-sensor"></div>
+    <span id="texto-sensor">Sin datos del sensor</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── MÉTRICAS EN TIEMPO REAL ── -->
+  <p class="seccion-titulo">Lectura actual del sensor</p>
+  <div class="metricas">
+
+    <div class="card-metrica">
+      <div class="etiqueta">pH del suelo</div>
+      <div class="valor" id="val-ph">–<span class="unidad"></span></div>
+      <div id="estado-ph" class="estado-texto estado-warn">Esperando sensor…</div>
+      <div class="ultima-vez" id="tiempo-ph"></div>
+      <div class="acento acento-verde"></div>
+    </div>
+
+    <div class="card-metrica">
+      <div class="etiqueta">Humedad del suelo</div>
+      <div class="valor" id="val-humedad">–<span class="unidad">%</span></div>
+      <div id="estado-humedad" class="estado-texto estado-warn">Esperando sensor…</div>
+      <div class="ultima-vez" id="tiempo-humedad"></div>
+      <div class="acento acento-agua"></div>
+    </div>
+
+    <div class="card-metrica">
+      <div class="etiqueta">Estado general</div>
+      <div class="valor" id="val-estado" style="font-size:1.5rem;padding-top:6px">–</div>
+      <div id="estado-general" class="estado-texto estado-warn" style="margin-top:14px">Sin lectura</div>
+      <div class="acento acento-tierra"></div>
+    </div>
+
+  </div>
+
+  <!-- ── HISTORIAL ── -->
+  <p class="seccion-titulo">Historial de lecturas</p>
+  <div class="card-historial">
+    <div class="historial-header">
+      <h3>Últimas 20 lecturas</h3>
+      <button class="btn-refrescar" onclick="cargarHistorial()">↻ Actualizar</button>
+    </div>
+    <div id="historial-contenido">
+      <div id="cargando-historial">Cargando…</div>
+    </div>
+  </div>
+
+  <!-- ── PLAGAS ── -->
+  <p class="seccion-titulo">Detección de plagas y recomendaciones</p>
+  <div class="plagas-grid" id="plagas-grid">
+    <div style="color:var(--texto-sec);font-size:.85rem">Cargando plagas…</div>
+  </div>
+
+  <div id="panel-recomendaciones">
+    <h3 id="reco-titulo">Recomendaciones</h3>
+    <div id="reco-cultivos" style="font-size:.75rem;color:var(--texto-sec);margin-bottom:6px"></div>
+    <div class="sintomas-box" id="reco-sintomas"></div>
+    <div class="reco-lista" id="reco-lista"></div>
+    <button id="btn-cerrar-panel" onclick="cerrarPanel()">Cerrar</button>
+  </div>
+
+</main>
+
+<script>
+// ── UTILIDADES ────────────────────────────────────────────────
+function fmtFecha(str) {
+  const d = new Date(str);
+  return d.toLocaleString('es-MX', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function hace(str) {
+  const seg = Math.floor((Date.now() - new Date(str)) / 1000);
+  if (seg < 60)  return `hace ${seg}s`;
+  if (seg < 3600) return `hace ${Math.floor(seg/60)}min`;
+  return `hace ${Math.floor(seg/3600)}h`;
+}
+
+// ── CLASIFICAR pH ─────────────────────────────────────────────
+function clasificarPH(ph) {
+  if (ph < 5.5) return { clase:'estado-bad',  texto:'Muy ácido', emoji:'⚠️' };
+  if (ph < 6.0) return { clase:'estado-warn', texto:'Ligeramente ácido', emoji:'🟡' };
+  if (ph <= 7.5) return { clase:'estado-ok',  texto:'Óptimo', emoji:'✅' };
+  if (ph <= 8.5) return { clase:'estado-warn', texto:'Ligeramente alcalino', emoji:'🟡' };
+  return { clase:'estado-bad', texto:'Muy alcalino', emoji:'⚠️' };
+}
+
+// ── CLASIFICAR HUMEDAD ────────────────────────────────────────
+function clasificarHumedad(h) {
+  if (h < 20) return { clase:'estado-bad',  texto:'Muy seco' };
+  if (h < 40) return { clase:'estado-warn', texto:'Seco' };
+  if (h <= 70) return { clase:'estado-ok',  texto:'Adecuado' };
+  if (h <= 85) return { clase:'estado-warn', texto:'Húmedo' };
+  return { clase:'estado-bad', texto:'Saturado' };
+}
+
+// ── ACTUALIZAR TARJETAS ───────────────────────────────────────
+function actualizarMetricas(data) {
+  if (!data) return;
+
+  const clPH = clasificarPH(data.ph);
+  const clHum = clasificarHumedad(data.humedad);
+
+  document.getElementById('val-ph').innerHTML      = data.ph.toFixed(2) + '<span class="unidad"></span>';
+  document.getElementById('estado-ph').textContent = clPH.texto;
+  document.getElementById('estado-ph').className   = 'estado-texto ' + clPH.clase;
+  document.getElementById('tiempo-ph').textContent = 'Actualizado ' + hace(data.fecha);
+
+  document.getElementById('val-humedad').innerHTML      = data.humedad.toFixed(1) + '<span class="unidad">%</span>';
+  document.getElementById('estado-humedad').textContent = clHum.texto;
+  document.getElementById('estado-humedad').className   = 'estado-texto ' + clHum.clase;
+  document.getElementById('tiempo-humedad').textContent = 'Actualizado ' + hace(data.fecha);
+
+  // Estado general
+  const malo = clPH.clase === 'estado-bad' || clHum.clase === 'estado-bad';
+  const warn = clPH.clase === 'estado-warn' || clHum.clase === 'estado-warn';
+  const eg = document.getElementById('estado-general');
+  const ev = document.getElementById('val-estado');
+  if (malo) {
+    ev.textContent = '⚠️ Atención';
+    eg.textContent = 'Condición crítica';
+    eg.className = 'estado-texto estado-bad';
+  } else if (warn) {
+    ev.textContent = '🟡 Regular';
+    eg.textContent = 'Condición aceptable';
+    eg.className = 'estado-texto estado-warn';
+  } else {
+    ev.textContent = '✅ Bien';
+    eg.textContent = 'Condición óptima';
+    eg.className = 'estado-texto estado-ok';
+  }
+
+  // Dot de sensor
+  const dot = document.getElementById('dot-sensor');
+  dot.className = 'activo';
+  document.getElementById('texto-sensor').textContent = 'Sensor activo · ' + hace(data.fecha);
+}
+
+// ── POLLING ÚLTIMA LECTURA (cada 5s) ─────────────────────────
+async function obtenerUltimaLectura() {
+  try {
+    const res = await fetch('/api/sensor/ultima');
+    const data = await res.json();
+    actualizarMetricas(data);
+  } catch (e) {
+    document.getElementById('dot-sensor').className = 'error';
+    document.getElementById('texto-sensor').textContent = 'Sensor desconectado';
+  }
+}
+obtenerUltimaLectura();
+setInterval(obtenerUltimaLectura, 5000);
+
+// ── HISTORIAL ────────────────────────────────────────────────
+async function cargarHistorial() {
+  const cont = document.getElementById('historial-contenido');
+  cont.innerHTML = '<div id="cargando-historial">Cargando…</div>';
+  try {
+    const res = await fetch('/api/sensor/lecturas?limite=20');
+    const datos = await res.json();
+
+    if (!datos.length) {
+      cont.innerHTML = '<div id="cargando-historial">No hay lecturas registradas aún.</div>';
+      return;
+    }
+
+    const filas = datos.map(d => {
+      const clPH  = clasificarPH(d.ph);
+      const clHum = clasificarHumedad(d.humedad);
+      return `
+        <tr>
+          <td>${fmtFecha(d.fecha)}</td>
+          <td class="ph-val">${parseFloat(d.ph).toFixed(2)}</td>
+          <td>${parseFloat(d.humedad).toFixed(1)}%</td>
+          <td><span class="badge ${clPH.clase}">${clPH.texto}</span></td>
+          <td><span class="badge ${clHum.clase}">${clHum.texto}</span></td>
+        </tr>`;
+    }).join('');
+
+    cont.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha / Hora</th>
+            <th>pH</th>
+            <th>Humedad</th>
+            <th>Estado pH</th>
+            <th>Estado Humedad</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>`;
+  } catch (e) {
+    cont.innerHTML = '<div id="cargando-historial">Error al cargar historial.</div>';
+  }
+}
+cargarHistorial();
+
+// ── CARGAR PLAGAS ─────────────────────────────────────────────
+async function cargarPlagas() {
+  try {
+    const res = await fetch('/api/plagas');
+    const plagas = await res.json();
+    const grid = document.getElementById('plagas-grid');
+
+    grid.innerHTML = plagas.map(p => `
+      <div class="card-plaga" id="plaga-${p.id}" onclick="seleccionarPlaga(${p.id}, '${p.nombre}', \`${p.sintomas}\`, \`${p.cultivos_afectados}\`)">
+        <h4>${p.nombre}</h4>
+        <p>${p.descripcion}</p>
+      </div>`
+    ).join('');
+  } catch(e) {
+    document.getElementById('plagas-grid').innerHTML = '<p style="color:var(--texto-sec);font-size:.85rem">Error al cargar plagas.</p>';
+  }
+}
+cargarPlagas();
+
+// ── SELECCIONAR PLAGA Y VER RECOMENDACIONES ───────────────────
+let plagaActivaId = null;
+
+async function seleccionarPlaga(id, nombre, sintomas, cultivos) {
+  // Deseleccionar anterior
+  if (plagaActivaId) {
+    const ant = document.getElementById('plaga-' + plagaActivaId);
+    if (ant) ant.classList.remove('activa');
+  }
+  document.getElementById('plaga-' + id).classList.add('activa');
+  plagaActivaId = id;
+
+  const panel = document.getElementById('panel-recomendaciones');
+  panel.style.display = 'block';
+  document.getElementById('reco-titulo').textContent = 'Recomendaciones — ' + nombre;
+  document.getElementById('reco-sintomas').textContent = '🔍 Síntomas: ' + sintomas;
+  document.getElementById('reco-cultivos').textContent = '🌱 Cultivos afectados: ' + cultivos;
+  document.getElementById('reco-lista').innerHTML = '<p style="color:var(--texto-sec);font-size:.82rem">Cargando…</p>';
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const res = await fetch(`/api/plagas/${id}/recomendaciones`);
+    const recos = await res.json();
+
+    if (!recos.length) {
+      document.getElementById('reco-lista').innerHTML = '<p style="color:var(--texto-sec);font-size:.82rem">No hay recomendaciones registradas para esta plaga.</p>';
+      return;
+    }
+
+    document.getElementById('reco-lista').innerHTML = recos.map(r => `
+      <div class="reco-item">
+        <div class="reco-trat">${r.tratamiento}</div>
+        <div class="reco-det">
+          <span>Productos:</span> ${r.productos_sugeridos || '—'} &nbsp;|&nbsp;
+          <span>Dosis:</span> ${r.dosis || '—'}
+        </div>
+      </div>`
+    ).join('');
+  } catch(e) {
+    document.getElementById('reco-lista').innerHTML = '<p style="color:var(--rojo);font-size:.82rem">Error al cargar recomendaciones.</p>';
+  }
+}
+
+function cerrarPanel() {
+  document.getElementById('panel-recomendaciones').style.display = 'none';
+  if (plagaActivaId) {
+    const el = document.getElementById('plaga-' + plagaActivaId);
+    if (el) el.classList.remove('activa');
+    plagaActivaId = null;
+  }
+}
+</script>
+</body>
+</html>

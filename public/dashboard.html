@@ -5,11 +5,138 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agrosyph - Panel</title>
     <link rel="stylesheet" href="styles.css">
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        /* ── Selector de plaga ── */
+        .plaga-selector-wrap { position: relative; }
+
+        #plagaSelect {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d0d8d2;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: .88rem;
+            background: #fff;
+            color: #1a2e22;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b8c75' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            cursor: pointer;
+            transition: border-color .2s;
+        }
+        #plagaSelect:focus {
+            outline: none;
+            border-color: #40916c;
+            box-shadow: 0 0 0 3px rgba(64,145,108,.12);
+        }
+
+        /* ── Tarjeta de síntomas ── */
+        #plagaInfo {
+            display: none;
+            margin-top: 10px;
+            background: #fffbf0;
+            border-left: 3px solid #e9c46a;
+            border-radius: 0 8px 8px 0;
+            padding: 10px 14px;
+            font-size: .8rem;
+            color: #6b5a1a;
+            line-height: 1.5;
+            animation: slideDown .25s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: none; }
+        }
+        #plagaInfo strong { color: #4a3800; display: block; margin-bottom: 3px; font-size: .75rem; letter-spacing: .5px; text-transform: uppercase; }
+        #plagaInfo .cultivos-tag {
+            display: inline-block;
+            margin-top: 6px;
+            background: #d8f3dc;
+            color: #2d6a4f;
+            padding: 2px 9px;
+            border-radius: 10px;
+            font-size: .72rem;
+            font-weight: 500;
+        }
+
+        /* ── Botón ver recomendaciones ── */
+        #btnVerRecos {
+            display: none;
+            margin-top: 8px;
+            font-family: inherit;
+            font-size: .78rem;
+            background: #2d6a4f;
+            color: #fff;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        #btnVerRecos:hover { background: #40916c; }
+
+        /* ── Modal de recomendaciones ── */
+        #modalRecos {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #modalRecos.abierto { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px 30px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: popIn .25s ease;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(.96); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        .modal-box h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: #1a2e22; }
+        .modal-sintomas {
+            background: #fffbf0;
+            border-left: 3px solid #e9c46a;
+            padding: 9px 13px;
+            border-radius: 0 8px 8px 0;
+            font-size: .78rem;
+            color: #6b5a1a;
+            margin: 10px 0 16px;
+            line-height: 1.5;
+        }
+        .reco-item {
+            background: #f7f9f5;
+            border-left: 3px solid #40916c;
+            border-radius: 0 8px 8px 0;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+        .reco-item .reco-trat { font-size: .85rem; font-weight: 500; color: #1a2e22; margin-bottom: 5px; }
+        .reco-item .reco-det  { font-size: .75rem; color: #6b8c75; }
+        .reco-item .reco-det span { color: #a07850; }
+        .modal-cerrar {
+            margin-top: 14px;
+            font-family: inherit;
+            font-size: .78rem;
+            background: none;
+            border: 1px solid #d0d8d2;
+            color: #6b8c75;
+            padding: 6px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .modal-cerrar:hover { background: #f7f9f5; }
+    </style>
 </head>
 <body>
     <div class="dashboard">
@@ -18,7 +145,6 @@
                 <h1>Agrosyph</h1>
                 <p>Monitoreo y gestión de reportes de plagas</p>
             </div>
-
             <div class="topbar-right">
                 <div class="usuario-box">
                     <span class="usuario-label">Usuario activo</span>
@@ -34,12 +160,10 @@
                     <span class="resumen-titulo">Total reportes</span>
                     <strong id="totalReportes">0</strong>
                 </div>
-
                 <div class="resumen-card">
                     <span class="resumen-titulo">Con imagen</span>
                     <strong id="totalConImagen">0</strong>
                 </div>
-
                 <div class="resumen-card">
                     <span class="resumen-titulo">Mis reportes</span>
                     <strong id="misReportes">0</strong>
@@ -71,9 +195,19 @@
                                 <input type="text" id="etapa" placeholder="Ej. Floración">
                             </div>
 
+                            <!-- ── CAMPO PLAGA MEJORADO ── -->
                             <div class="campo">
-                                <label for="plaga">Tipo de plaga</label>
-                                <input type="text" id="plaga" placeholder="Ej. Gusano cogollero">
+                                <label for="plagaSelect">Tipo de plaga</label>
+                                <div class="plaga-selector-wrap">
+                                    <select id="plagaSelect">
+                                        <option value="">Selecciona una plaga…</option>
+                                    </select>
+                                </div>
+                                <!-- Tarjeta de síntomas al seleccionar -->
+                                <div id="plagaInfo"></div>
+                                <button type="button" id="btnVerRecos">Ver recomendaciones de tratamiento</button>
+                                <!-- Input oculto que guarda el nombre para enviarlo al backend -->
+                                <input type="hidden" id="plaga">
                             </div>
 
                             <div class="campo completo">
@@ -116,19 +250,16 @@
                                 <h2>Historial de reportes</h2>
                                 <p>Consulta, edita o elimina los reportes registrados.</p>
                             </div>
-
                             <div class="herramientas-historial">
                                 <div class="filtros-vista">
                                     <button type="button" class="btn-filtro activo" id="btnVistaTodos">Todos</button>
                                     <button type="button" class="btn-filtro" id="btnVistaMios">Mis reportes</button>
                                 </div>
-
                                 <div class="filtros-box">
                                     <input type="text" id="busquedaReporte" placeholder="Buscar por cultivo o plaga">
                                 </div>
                             </div>
                         </div>
-
                         <div id="contenedorReportes" class="lista-reportes">
                             <p>Cargando reportes...</p>
                         </div>
@@ -141,7 +272,6 @@
                                 <p>Visualiza los reportes con coordenadas registradas.</p>
                             </div>
                         </div>
-
                         <div id="mapaReportes"></div>
                     </div>
                 </div>
@@ -149,7 +279,137 @@
         </main>
     </div>
 
+    <!-- ── MODAL DE RECOMENDACIONES ── -->
+    <div id="modalRecos">
+        <div class="modal-box">
+            <h3 id="modalTitulo">Recomendaciones</h3>
+            <div class="modal-sintomas" id="modalSintomas"></div>
+            <div id="modalLista"></div>
+            <button class="modal-cerrar" onclick="cerrarModal()">Cerrar</button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="dashboard.js"></script>
+    <script>
+    // ── CARGAR PLAGAS EN EL SELECT ────────────────────────────
+    let plagasData = [];
+
+    async function cargarPlagasSelect() {
+        try {
+            const res = await fetch('/api/plagas');
+            plagasData = await res.json();
+            const sel = document.getElementById('plagaSelect');
+            plagasData.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.nombre;
+                sel.appendChild(opt);
+            });
+        } catch(e) {
+            console.error('Error cargando plagas:', e);
+        }
+    }
+    cargarPlagasSelect();
+
+    // ── AL SELECCIONAR PLAGA ──────────────────────────────────
+    document.getElementById('plagaSelect').addEventListener('change', function() {
+        const id = parseInt(this.value);
+        const info   = document.getElementById('plagaInfo');
+        const btnRec = document.getElementById('btnVerRecos');
+        const inputPlaga = document.getElementById('plaga');
+
+        if (!id) {
+            info.style.display = 'none';
+            btnRec.style.display = 'none';
+            inputPlaga.value = '';
+            return;
+        }
+
+        const plaga = plagasData.find(p => p.id === id);
+        if (!plaga) return;
+
+        // Guardar nombre en el input oculto para el backend existente
+        inputPlaga.value = plaga.nombre;
+
+        // Mostrar síntomas
+        info.style.display = 'block';
+        info.innerHTML = `
+            <strong>Síntomas</strong>
+            ${plaga.sintomas}
+            <div><span class="cultivos-tag">🌱 ${plaga.cultivos_afectados}</span></div>
+        `;
+
+        btnRec.style.display = 'inline-block';
+    });
+
+    // ── BOTÓN VER RECOMENDACIONES ─────────────────────────────
+    document.getElementById('btnVerRecos').addEventListener('click', async () => {
+        const id = parseInt(document.getElementById('plagaSelect').value);
+        if (!id) return;
+        const plaga = plagasData.find(p => p.id === id);
+        await abrirModal(id, plaga);
+    });
+
+    // ── MODAL ─────────────────────────────────────────────────
+    async function abrirModal(id, plaga) {
+        document.getElementById('modalTitulo').textContent = 'Recomendaciones — ' + plaga.nombre;
+        document.getElementById('modalSintomas').textContent = '🔍 Síntomas: ' + plaga.sintomas;
+        document.getElementById('modalLista').innerHTML = '<p style="color:#6b8c75;font-size:.82rem">Cargando…</p>';
+        document.getElementById('modalRecos').classList.add('abierto');
+
+        try {
+            const res  = await fetch(`/api/plagas/${id}/recomendaciones`);
+            const recos = await res.json();
+
+            if (!recos.length) {
+                document.getElementById('modalLista').innerHTML = '<p style="color:#6b8c75;font-size:.82rem">No hay recomendaciones registradas.</p>';
+                return;
+            }
+
+            document.getElementById('modalLista').innerHTML = recos.map(r => `
+                <div class="reco-item">
+                    <div class="reco-trat">${r.tratamiento}</div>
+                    <div class="reco-det">
+                        <span>Productos:</span> ${r.productos_sugeridos || '—'} &nbsp;|&nbsp;
+                        <span>Dosis:</span> ${r.dosis || '—'}
+                    </div>
+                </div>`
+            ).join('');
+        } catch(e) {
+            document.getElementById('modalLista').innerHTML = '<p style="color:#c1392b;font-size:.82rem">Error al cargar recomendaciones.</p>';
+        }
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalRecos').classList.remove('abierto');
+    }
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modalRecos').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModal();
+    });
+
+    // ── AL EDITAR UN REPORTE: restaurar el select ─────────────
+    // dashboard.js llama window.cargarEnFormulario(reporte) al editar
+    // Sobreescribimos para que también actualice el select
+    const _cargarOriginal = window.cargarEnFormulario;
+    window.cargarEnFormulario = function(reporte) {
+        if (_cargarOriginal) _cargarOriginal(reporte);
+
+        // Buscar la plaga por nombre y seleccionarla
+        const sel = document.getElementById('plagaSelect');
+        const match = plagasData.find(p =>
+            p.nombre.toLowerCase() === (reporte.tipo_plaga || '').toLowerCase()
+        );
+        if (match) {
+            sel.value = match.id;
+            sel.dispatchEvent(new Event('change'));
+        } else {
+            // Si la plaga no está en el catálogo, mostrar el nombre en el input oculto
+            document.getElementById('plaga').value = reporte.tipo_plaga || '';
+        }
+    };
+    </script>
 </body>
 </html>

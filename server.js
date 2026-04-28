@@ -292,6 +292,280 @@ app.get('/api/plagas/:id/recomendaciones', (req, res) => {
     );
 });
 
+// ═══════════════════════════════════════════════════════════════
+//  AGROSYPH — Endpoints nuevos para monitoreo avanzado
+//  Pega este bloque ANTES de app.listen(...) en server.js
+// ═══════════════════════════════════════════════════════════════
+
+// ── UMBRALES DE ALERTA ────────────────────────────────────────
+const UMBRAL_PH_WARN = 0.5;   // diferencia que dispara alerta amarilla
+const UMBRAL_PH_CRIT = 1.0;   // diferencia que dispara alerta roja
+const UMBRAL_HUM_WARN = 15;    // puntos porcentuales
+const UMBRAL_HUM_CRIT = 30;
+
+// ── PARCELAS ──────────────────────────────────────────────────
+app.get('/api/parcelas', (req, res) => {
+    const sql = `
+    SELECT p.*, s.id AS sensor_id, s.nombre AS sensor_nombre, s.activo AS sensor_activo,
+           l.ph, l.humedad, l.fecha AS ultima_lectura
+    FROM parcelas p
+    LEFT JOIN sensores s ON s.id_parcela = p.id
+    LEFT JOIN lecturas_sensor l ON l.id = (
+      SELECT id FROM lecturas_sensor WHERE id_sensor = s.id ORDER BY fecha DESC LIMIT 1
+    )
+    ORDER BY p.id ASC`;
+    conexion.query(sql, (err, rows) => {
+        if (err) return res.status(500).json({ mensaje: 'Error al obtener parcelas' });
+        res.json(rows);
+    });
+});
+
+app.post('/api/parcelas', (req, res) => {
+    const { nombre, descripcion, cultivo, area_hectareas, latitud, longitud, radio_metros } = req.body;
+    if (!nombre || !latitud || !longitud)
+        return res.status(400).json({ mensaje: 'Nombre y coordenadas son obligatorios' });
+    conexion.query(
+        'INSERT INTO parcelas (nombre, descripcion, cultivo, area_hectareas, latitud, longitud, radio_metros) VALUES (?,?,?,?,?,?,?)',
+        [nombre, descripcion || '', cultivo || '', area_hectareas || 0, latitud, longitud, radio_metros || 150],
+        (err, r) => {
+            if (err) return res.status(500).json({ mensaje: 'Error al crear parcela' });
+            res.status(201).json({ mensaje: 'Parcela creada', id: r.insertId });
+        }
+    );
+});
+
+app.put('/api/parcelas/:id', (req, res) => {
+    const { nombre, descripcion, cultivo, area_hectareas, latitud, longitud, radio_metros } = req.body;
+    conexion.query(
+        'UPDATE parcelas SET nombre=?, descripcion=?, cultivo=?, area_hectareas=?, latitud=?, longitud=?, radio_metros=? WHERE id=?',
+        [nombre, descripcion, cultivo, area_hectareas, latitud, longitud, radio_metros, req.params.id],
+        (err) => {
+            if (err) return res.status(500).json({ mensaje: 'Error al actualizar parcela' });
+            res.json({ mensaje: 'Parcela actualizada' });
+        }
+    );
+});
+
+// ── SENSORES ──────────────────────────────────────────────────
+app.get('/api/sensores', (req, res) => {
+    conexion.query(
+        `SELECT s.*, p.nombre AS parcela_nombre,
+            l.ph, l.humedad, l.fecha AS ultima_lectura
+     FROM sensores s
+     LEFT JOIN parcelas p ON p.id = s.id_parcela
+     LEFT JOIN lecturas_sensor l ON l.id = (
+       SELECT id FROM lecturas_sensor WHERE id_sensor = s.id ORDER BY fecha DESC LIMIT 1
+     )
+     ORDER BY s.id ASC`,
+        (err, rows) => {
+            if (err) return res.status(500).json({ mensaje: 'Error al obtener sensores' });
+            res.json(rows);
+        }
+    );
+});
+
+// POST sensor con detección automática de alertas
+app.post('/api/sensor', (req, res) => {
+    const { ph, humedad, id_sensor } = req.body;
+    const sensorId = id_sensor || 1;
+
+    if (ph === undefined || humedad === undefined)
+        return res.status(400).json({ mensaje: 'ph y humedad son obligatorios' });
+
+    // Obtener última lectura de este sensor para comparar
+    conexion.query(
+        'SELECT ph, humedad FROM lecturas_sensor WHERE id_sensor = ? ORDER BY fecha DESC LIMIT 1',
+        [sensorId],
+        (err, prev) => {
+            let alerta = 0, motivo = null, nivelAlerta = null;
+
+            if (!err && prev.length) {
+                const diffPH = Math.abs(ph - prev[0].ph);
+                const diffHum = Math.abs(humedad - prev[0].humedad);
+                const alertaPH = diffPH >= UMBRAL_PH_WARN;
+                const alertaHum = diffHum >= UMBRAL_HUM_WARN;
+                const critica = diffPH >= UMBRAL_PH_CRIT || diffHum >= UMBRAL_HUM_CRIT;
+
+                if (alertaPH || alertaHum) {
+                    alerta = 1;
+                    nivelAlerta = critica ? 'critica' : 'warn';
+                    const partes = [];
+                    if (alertaPH) partes.push(`pH cambió ${diffPH.toFixed(2)} (antes: ${prev[0].ph}, ahora: ${ph})`);
+                    if (alertaHum) partes.push(`Humedad cambió ${diffHum.toFixed(1)}% (antes: ${prev[0].humedad}%, ahora: ${humedad}%)`);
+                    motivo = partes.join(' | ');
+                }
+            }
+
+            // Guardar lectura
+            conexion.query(
+                'INSERT INTO lecturas_sensor (ph, humedad, fecha, id_sensor, alerta, motivo_alerta) VALUES (?,?,NOW(),?,?,?)',
+                [ph, humedad, sensorId, alerta, motivo],
+                (err2, result) => {
+                    if (err2) return res.status(500).json({ mensaje: 'Error al guardar lectura' });
+
+                    // Si hay alerta, guardar en tabla alertas
+                    if (alerta && nivelAlerta) {
+                        conexion.query(
+                            'SELECT id_parcela FROM sensores WHERE id = ?', [sensorId],
+                            (err3, sens) => {
+                                const parcela = sens && sens[0] ? sens[0].id_parcela : null;
+                                conexion.query(
+                                    'INSERT INTO alertas (id_sensor, id_parcela, tipo, valor_anterior, valor_actual, diferencia, nivel, mensaje) VALUES (?,?,?,?,?,?,?,?)',
+                                    [sensorId, parcela, 'combinada', prev[0]?.ph, ph, Math.abs(ph - (prev[0]?.ph || ph)), nivelAlerta, motivo],
+                                    () => { }
+                                );
+                            }
+                        );
+                    }
+
+                    res.status(201).json({ mensaje: 'Lectura guardada', id: result.insertId, alerta, motivo });
+                }
+            );
+        }
+    );
+});
+
+// ── LECTURAS (con soporte id_sensor) ─────────────────────────
+app.get('/api/sensor/lecturas', (req, res) => {
+    const limite = parseInt(req.query.limite) || 20;
+    const idSensor = req.query.id_sensor || null;
+    const where = idSensor ? 'WHERE id_sensor = ?' : '';
+    const params = idSensor ? [idSensor, limite] : [limite];
+    conexion.query(
+        `SELECT * FROM lecturas_sensor ${where} ORDER BY fecha DESC LIMIT ?`,
+        params,
+        (err, rows) => {
+            if (err) return res.status(500).json({ mensaje: 'Error al obtener lecturas' });
+            res.json(rows);
+        }
+    );
+});
+
+app.get('/api/sensor/ultima', (req, res) => {
+    const idSensor = req.query.id_sensor || null;
+    const where = idSensor ? 'WHERE id_sensor = ?' : '';
+    const params = idSensor ? [idSensor] : [];
+    conexion.query(
+        `SELECT * FROM lecturas_sensor ${where} ORDER BY fecha DESC LIMIT 1`,
+        params,
+        (err, rows) => {
+            if (err) return res.status(500).json({ mensaje: 'Error' });
+            res.json(rows[0] || null);
+        }
+    );
+});
+
+// ── ALERTAS ───────────────────────────────────────────────────
+app.get('/api/alertas', (req, res) => {
+    const limite = parseInt(req.query.limite) || 30;
+    conexion.query(
+        `SELECT a.*, s.nombre AS sensor_nombre, p.nombre AS parcela_nombre
+     FROM alertas a
+     LEFT JOIN sensores s ON s.id = a.id_sensor
+     LEFT JOIN parcelas p ON p.id = a.id_parcela
+     ORDER BY a.creada_en DESC LIMIT ?`,
+        [limite],
+        (err, rows) => {
+            if (err) return res.status(500).json({ mensaje: 'Error al obtener alertas' });
+            res.json(rows);
+        }
+    );
+});
+
+app.get('/api/alertas/no-leidas', (req, res) => {
+    conexion.query('SELECT COUNT(*) AS total FROM alertas WHERE leida = 0', (err, rows) => {
+        if (err) return res.status(500).json({ mensaje: 'Error' });
+        res.json({ total: rows[0].total });
+    });
+});
+
+app.put('/api/alertas/marcar-leidas', (req, res) => {
+    conexion.query('UPDATE alertas SET leida = 1 WHERE leida = 0', (err) => {
+        if (err) return res.status(500).json({ mensaje: 'Error' });
+        res.json({ mensaje: 'Alertas marcadas como leídas' });
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  AGROSYPH — Endpoints adicionales
+//  Pega esto en server.js ANTES de app.listen(...)
+// ═══════════════════════════════════════════════════════════════
+
+// ── Plagas detectadas por parcela (cruza reportes con parcelas) ─
+app.get('/api/parcelas/:id/plagas', (req, res) => {
+  const sql = `
+    SELECT
+      r.tipo_plaga,
+      r.cultivo,
+      r.descripcion,
+      r.fecha_reporte,
+      r.imagen,
+      u.nombre AS reportado_por,
+      p2.nombre AS nombre_plaga,
+      p2.sintomas,
+      p2.id AS plaga_id
+    FROM reportes r
+    INNER JOIN parcelas p ON p.id = ?
+    LEFT JOIN usuarios u ON u.id = r.id_usuario
+    LEFT JOIN plagas p2 ON LOWER(p2.nombre) = LOWER(r.tipo_plaga)
+    WHERE r.ubicacion LIKE CONCAT('%', p.nombre, '%')
+       OR (
+         r.latitud IS NOT NULL AND r.longitud IS NOT NULL AND
+         r.latitud  BETWEEN p.latitud  - 0.005 AND p.latitud  + 0.005 AND
+         r.longitud BETWEEN p.longitud - 0.005 AND p.longitud + 0.005
+       )
+    ORDER BY r.fecha_reporte DESC
+    LIMIT 10`;
+  conexion.query(sql, [req.params.id], (err, rows) => {
+    if (err) return res.status(500).json({ mensaje: 'Error al obtener plagas de parcela' });
+    res.json(rows);
+  });
+});
+
+// ── Parcelas disponibles para selector en dashboard ────────────
+app.get('/api/parcelas/selector', (req, res) => {
+  const sql = `
+    SELECT p.id, p.nombre, p.cultivo, p.latitud, p.longitud,
+           s.id AS sensor_id, s.nombre AS sensor_nombre, s.activo AS sensor_activo
+    FROM parcelas p
+    LEFT JOIN sensores s ON s.id_parcela = p.id
+    ORDER BY p.nombre ASC`;
+  conexion.query(sql, (err, rows) => {
+    if (err) return res.status(500).json({ mensaje: 'Error' });
+    res.json(rows);
+  });
+});
+
+// ── Crear parcela + sensor desde el dashboard ──────────────────
+app.post('/api/parcelas/nueva-con-sensor', (req, res) => {
+  const { nombre, cultivo, latitud, longitud, radio_metros, nombre_sensor } = req.body;
+  if (!nombre || !latitud || !longitud)
+    return res.status(400).json({ mensaje: 'Nombre y coordenadas son obligatorios' });
+
+  conexion.query(
+    'INSERT INTO parcelas (nombre, cultivo, latitud, longitud, radio_metros) VALUES (?,?,?,?,?)',
+    [nombre, cultivo || '', latitud, longitud, radio_metros || 150],
+    (err, r) => {
+      if (err) return res.status(500).json({ mensaje: 'Error al crear parcela' });
+      const idParcela = r.insertId;
+      const nomSensor = nombre_sensor || `Sensor-${String(idParcela).padStart(3,'0')}`;
+      const token     = `token-${nombre.toLowerCase().replace(/\s+/g,'-')}-${idParcela}`;
+      conexion.query(
+        'INSERT INTO sensores (nombre, id_parcela, activo, token) VALUES (?,?,1,?)',
+        [nomSensor, idParcela, token],
+        (err2, r2) => {
+          if (err2) return res.status(500).json({ mensaje: 'Parcela creada pero error al crear sensor' });
+          res.status(201).json({
+            mensaje: 'Parcela y sensor creados correctamente',
+            id_parcela: idParcela,
+            id_sensor:  r2.insertId,
+            token
+          });
+        }
+      );
+    }
+  );
+});
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);

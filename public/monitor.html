@@ -1,542 +1,461 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Agrosyph — Monitor de Suelo</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --verde:     #2d6a4f;
-    --verde-med: #40916c;
-    --verde-cla: #74c69d;
-    --verde-bg:  #d8f3dc;
-    --tierra:    #a07850;
-    --tierra-cla:#d4a574;
-    --amarillo:  #e9c46a;
-    --rojo:      #c1392b;
-    --rojo-cla:  #f4a69a;
-    --fondo:     #f7f9f5;
-    --card:      #ffffff;
-    --borde:     #e0e8e2;
-    --texto:     #1a2e22;
-    --texto-sec: #6b8c75;
-    --mono:      'DM Mono', monospace;
-    --sans:      'Space Grotesk', sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: var(--sans);
-    background: var(--fondo);
-    color: var(--texto);
-    min-height: 100vh;
-  }
-
-  /* ── HEADER ── */
-  header {
-    background: var(--verde);
-    color: #fff;
-    padding: 18px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  header h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -.3px; }
-  header h1 span { color: var(--verde-cla); }
-  #estado-sensor {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: .8rem;
-    font-family: var(--mono);
-    opacity: .85;
-  }
-  #dot-sensor {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #aaa;
-    transition: background .4s;
-  }
-  #dot-sensor.activo  { background: var(--verde-cla); box-shadow: 0 0 6px var(--verde-cla); }
-  #dot-sensor.error   { background: var(--rojo-cla); }
-
-  /* ── LAYOUT ── */
-  main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
-  .seccion-titulo {
-    font-size: .7rem;
-    font-weight: 600;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--texto-sec);
-    margin-bottom: 14px;
-    margin-top: 36px;
-  }
-  .seccion-titulo:first-child { margin-top: 0; }
-
-  /* ── CARDS MÉTRICAS ── */
-  .metricas {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-  }
-  .card-metrica {
-    background: var(--card);
-    border: 1px solid var(--borde);
-    border-radius: 14px;
-    padding: 22px 24px;
-    position: relative;
-    overflow: hidden;
-    transition: transform .2s;
-  }
-  .card-metrica:hover { transform: translateY(-2px); }
-  .card-metrica .etiqueta {
-    font-size: .72rem;
-    font-weight: 500;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--texto-sec);
-    margin-bottom: 10px;
-  }
-  .card-metrica .valor {
-    font-family: var(--mono);
-    font-size: 2.6rem;
-    font-weight: 500;
-    line-height: 1;
-    color: var(--texto);
-  }
-  .card-metrica .unidad { font-size: 1rem; color: var(--texto-sec); margin-left: 2px; }
-  .card-metrica .estado-texto {
-    font-size: .78rem;
-    margin-top: 10px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    display: inline-block;
-    font-weight: 500;
-  }
-  .estado-ok   { background: var(--verde-bg); color: var(--verde); }
-  .estado-warn { background: #fff3cd; color: #856404; }
-  .estado-bad  { background: #fde8e6; color: var(--rojo); }
-
-  .card-metrica .acento {
-    position: absolute;
-    right: -20px; bottom: -20px;
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    opacity: .06;
-  }
-  .acento-verde  { background: var(--verde); }
-  .acento-tierra { background: var(--tierra); }
-  .acento-agua   { background: #1a759f; }
-
-  .card-metrica .ultima-vez {
-    font-family: var(--mono);
-    font-size: .68rem;
-    color: var(--texto-sec);
-    margin-top: 8px;
-  }
-
-  /* ── HISTORIAL ── */
-  .card-historial {
-    background: var(--card);
-    border: 1px solid var(--borde);
-    border-radius: 14px;
-    padding: 22px 24px;
-  }
-  .historial-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .historial-header h3 { font-size: .9rem; font-weight: 600; }
-  .btn-refrescar {
-    font-family: var(--sans);
-    font-size: .75rem;
-    background: var(--verde-bg);
-    color: var(--verde);
-    border: none;
-    padding: 6px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background .2s;
-  }
-  .btn-refrescar:hover { background: var(--verde-cla); color: #fff; }
-
-  table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-  thead th {
-    text-align: left;
-    padding: 8px 12px;
-    font-size: .68rem;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: var(--texto-sec);
-    border-bottom: 1px solid var(--borde);
-    font-weight: 500;
-  }
-  tbody tr { transition: background .15s; }
-  tbody tr:hover { background: #f0f5f1; }
-  tbody td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #f0f0f0;
-    font-family: var(--mono);
-    font-size: .8rem;
-  }
-  td.ph-val { font-weight: 500; }
-  td .badge {
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: .7rem;
-    font-weight: 500;
-    font-family: var(--sans);
-  }
-  #cargando-historial { color: var(--texto-sec); font-size: .82rem; padding: 20px 0; text-align: center; }
-
-  /* ── SECCIÓN PLAGAS ── */
-  .plagas-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
-  }
-  .card-plaga {
-    background: var(--card);
-    border: 2px solid var(--borde);
-    border-radius: 12px;
-    padding: 16px 18px;
-    cursor: pointer;
-    transition: border-color .2s, transform .2s;
-  }
-  .card-plaga:hover { border-color: var(--verde-med); transform: translateY(-2px); }
-  .card-plaga.activa { border-color: var(--verde); background: #f0faf3; }
-  .card-plaga h4 { font-size: .9rem; font-weight: 600; margin-bottom: 4px; }
-  .card-plaga p  { font-size: .75rem; color: var(--texto-sec); line-height: 1.4; }
-
-  /* ── PANEL RECOMENDACIONES ── */
-  #panel-recomendaciones {
-    display: none;
-    background: var(--card);
-    border: 1px solid var(--borde);
-    border-radius: 14px;
-    padding: 24px 28px;
-    margin-top: 16px;
-    animation: fadeUp .3s ease;
-  }
-  @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
-  #panel-recomendaciones h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
-  #panel-recomendaciones .sintomas-box {
-    background: #fffbf0;
-    border-left: 3px solid var(--amarillo);
-    padding: 10px 14px;
-    border-radius: 0 8px 8px 0;
-    font-size: .8rem;
-    color: #6b5a1a;
-    margin: 10px 0 16px;
-    line-height: 1.5;
-  }
-  .reco-lista { display: flex; flex-direction: column; gap: 12px; }
-  .reco-item {
-    background: var(--fondo);
-    border-radius: 10px;
-    padding: 14px 16px;
-    border-left: 3px solid var(--verde-med);
-  }
-  .reco-item .reco-trat { font-size: .85rem; font-weight: 500; margin-bottom: 6px; }
-  .reco-item .reco-det  { font-size: .78rem; color: var(--texto-sec); font-family: var(--mono); }
-  .reco-item .reco-det span { color: var(--tierra); }
-  #btn-cerrar-panel {
-    margin-top: 16px;
-    font-family: var(--sans);
-    font-size: .78rem;
-    background: none;
-    border: 1px solid var(--borde);
-    color: var(--texto-sec);
-    padding: 6px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-  }
-  #btn-cerrar-panel:hover { background: var(--fondo); }
-
-  #sin-datos {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--texto-sec);
-    font-size: .9rem;
-  }
-  #sin-datos .icono { font-size: 2.5rem; margin-bottom: 12px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agrosyph — Monitor de suelo</title>
+  <link rel="stylesheet" href="shared.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    .secciones-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-bottom:20px}
+    .seccion-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r16);padding:18px;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s}
+    .seccion-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+    .seccion-card.activa{border-color:var(--g500)}
+    .seccion-card.nivel-ok{border-left:4px solid #3b82f6}
+    .seccion-card.nivel-warn{border-left:4px solid #f59e0b}
+    .seccion-card.nivel-crit{border-left:4px solid #ef4444}
+    .seccion-card.sin-datos{border-left:4px solid var(--border2);opacity:.8}
+    .sec-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px}
+    .sec-nombre{font-size:.92rem;font-weight:700;color:var(--text)}
+    .sec-cultivo{font-size:.68rem;color:var(--text3);margin-top:2px}
+    .nivel-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+    .dot-ok{background:#3b82f6;box-shadow:0 0 6px #3b82f690}
+    .dot-warn{background:#f59e0b;box-shadow:0 0 6px #f59e0b90}
+    .dot-crit{background:#ef4444;box-shadow:0 0 6px #ef444490;animation:pulso 1.5s infinite}
+    .dot-nd{background:var(--border2)}
+    @keyframes pulso{0%,100%{opacity:1}50%{opacity:.4}}
+    .sec-metricas{display:flex;gap:10px;margin-bottom:10px}
+    .sec-metrica{flex:1;background:var(--bg2);border-radius:var(--r8);padding:8px 10px;min-width:0}
+    .sec-metrica-label{font-size:.58rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3)}
+    .sec-metrica-valor{font-family:var(--mono);font-size:1.3rem;font-weight:600;color:var(--text);line-height:1.1;margin-top:2px}
+    .sec-metrica-valor .un{font-size:.7rem;color:var(--text3)}
+    .sec-estado{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:8px}
+    .estado-ok{background:#dbeafe;color:#1d4ed8}.estado-warn{background:#fef3c7;color:#92400e}.estado-crit{background:#fee2e2;color:#991b1b}.estado-nd{background:var(--bg2);color:var(--text3)}
+    [data-theme="dark"] .estado-ok{background:#1e3a5f;color:#93c5fd}[data-theme="dark"] .estado-warn{background:#2d1f05;color:#fcd34d}[data-theme="dark"] .estado-crit{background:#2d0f0f;color:#fca5a5}
+    .sec-sensor{font-size:.65rem;color:var(--text3);display:flex;align-items:center;gap:5px;margin-top:8px}
+    .sec-sdot{width:6px;height:6px;border-radius:50%}
+    .sec-ultima{font-size:.62rem;color:var(--text4);font-family:var(--mono);margin-top:3px}
+    /* CHIPS PLAGAS */
+    .sec-plagas{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+    .plaga-chip{font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--r100);color:var(--r600);border:1px solid rgba(193,57,43,.15)}
+    .plaga-chip.reciente{background:var(--y100);color:#92400e;border-color:rgba(233,196,106,.3)}
+    [data-theme="dark"] .plaga-chip{background:var(--r100);color:#fca5a5}
+    [data-theme="dark"] .plaga-chip.reciente{background:var(--y100);color:#fcd34d}
+    /* MAPA */
+    #mapaMonitoreo{width:100%;height:400px;border-radius:var(--r16);border:1px solid var(--border);overflow:hidden}
+    .mapa-leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:.7rem;color:var(--text2);margin-top:8px}
+    .leyenda-item{display:flex;align-items:center;gap:5px;font-weight:500}
+    .lc{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+    .lc-ok{background:rgba(59,130,246,.6);border:2px solid #3b82f6}.lc-warn{background:rgba(245,158,11,.6);border:2px solid #f59e0b}.lc-crit{background:rgba(239,68,68,.6);border:2px solid #ef4444}.lc-nd{background:rgba(150,150,150,.2);border:2px solid #aaa}
+    /* PANEL DETALLE */
+    .panel-detalle{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r16);padding:20px;margin-bottom:18px;animation:fadeIn .22s ease}
+    .panel-detalle.visible{display:block}
+    .det-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px}
+    .det-titulo{font-size:1rem;font-weight:700}.det-meta{font-size:.72rem;color:var(--text3);margin-top:2px}
+    .det-metricas{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+    .det-card{background:var(--bg2);border-radius:var(--r12);padding:14px 16px}
+    .det-label{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+    .det-valor{font-family:var(--mono);font-size:2rem;font-weight:500;color:var(--text)}
+    .det-valor .un{font-size:.85rem;color:var(--text3)}
+    .det-barra{height:3px;background:var(--border);border-radius:3px;margin-top:10px;overflow:hidden}
+    .det-fill{height:100%;border-radius:3px;transition:width .6s ease}
+    .f-azul{background:#3b82f6}.f-verde{background:var(--g400)}
+    .propag-box{margin-top:8px;padding:8px 11px;border-radius:var(--r8);font-size:.72rem;line-height:1.5;border-left:3px solid}
+    .pb-ok{background:#dbeafe;border-color:#3b82f6;color:#1d4ed8}.pb-warn{background:#fef3c7;border-color:#f59e0b;color:#92400e}.pb-crit{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+    [data-theme="dark"] .pb-ok{background:#1e3a5f;color:#93c5fd}[data-theme="dark"] .pb-warn{background:#2d1f05;color:#fcd34d}[data-theme="dark"] .pb-crit{background:#2d0f0f;color:#fca5a5}
+    .det-section-title{font-size:.65rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin:16px 0 8px}
+    /* PLAGAS DETALLE */
+    .plaga-det-item{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--r600);border-radius:0 var(--r12) var(--r12) 0;padding:12px 14px;margin-bottom:8px}
+    .plaga-det-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px}
+    .plaga-det-nombre{font-size:.85rem;font-weight:700;color:var(--r600)}
+    [data-theme="dark"] .plaga-det-nombre{color:#fca5a5}
+    .plaga-det-fecha{font-size:.62rem;color:var(--text3);font-family:var(--mono);white-space:nowrap}
+    .plaga-det-cultivo{font-size:.7rem;color:var(--text2);margin-bottom:4px}
+    .plaga-det-desc{font-size:.72rem;color:var(--text3);line-height:1.5}
+    .plaga-det-sint{margin-top:6px;padding:6px 9px;background:var(--t50);border-left:2px solid var(--y500);border-radius:0 var(--r8) var(--r8) 0;font-size:.68rem;color:var(--t800);line-height:1.5}
+    [data-theme="dark"] .plaga-det-sint{background:#1e1508;color:#d4a96e}
+    .plaga-det-reporter{font-size:.63rem;color:var(--text3);margin-top:5px;font-family:var(--mono)}
+    .btn-ver-reco-p{font-family:var(--font);font-size:.68rem;font-weight:600;background:var(--g50);color:var(--g600);border:1px solid var(--g200);padding:4px 10px;border-radius:10px;cursor:pointer;margin-top:6px;transition:background .18s}
+    .btn-ver-reco-p:hover{background:var(--g100)}
+    .sin-plagas{font-size:.78rem;color:var(--text3);padding:10px 0;display:flex;align-items:center;gap:6px}
+    /* ALERTAS */
+    .alertas-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:#ef4444;color:#fff;font-size:.6rem;font-weight:700;padding:0 4px}
+    .alerta-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
+    .alerta-item:last-child{border-bottom:none}
+    .alerta-icono{width:30px;height:30px;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+    .ai-warn{background:#fef3c7}.ai-crit{background:#fee2e2;animation:pulso 2s infinite}
+    [data-theme="dark"] .ai-warn{background:#2d1f05}[data-theme="dark"] .ai-crit{background:#2d0f0f}
+    .alerta-msg{font-size:.78rem;font-weight:600;color:var(--text);line-height:1.4}
+    .alerta-meta{font-size:.65rem;color:var(--text3);font-family:var(--mono);margin-top:2px}
+    .lv-warn{color:#92400e;font-weight:700}.lv-crit{color:#991b1b;font-weight:700}
+    [data-theme="dark"] .lv-warn{color:#fcd34d}[data-theme="dark"] .lv-crit{color:#fca5a5}
+    /* TOAST */
+    #toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1.5px solid #ef4444;border-radius:var(--r16);padding:14px 16px;max-width:330px;box-shadow:var(--shadow-xl);display:none;gap:10px;align-items:flex-start}
+    #toast.show{display:flex;animation:slideUp .3s ease}
+    @keyframes slideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+    .toast-tit{font-size:.78rem;font-weight:700;color:#991b1b;margin-bottom:2px}
+    [data-theme="dark"] .toast-tit{color:#fca5a5}
+    .toast-msg{font-size:.72rem;color:var(--text2);line-height:1.4}
+    .row-warn{background:#fff7ed!important}[data-theme="dark"] .row-warn{background:#1e1508!important}
+    .row-crit{background:#fff1f0!important}[data-theme="dark"] .row-crit{background:#1e0f0d!important}
+    [data-theme="dark"] .leaflet-tile{filter:brightness(.6) invert(1) contrast(3) hue-rotate(200deg) saturate(.3) brightness(.7)}
+  </style>
 </head>
 <body>
 
-<header>
-  <h1>Agrosyph <span>/ Monitor de Suelo</span></h1>
-  <div id="estado-sensor">
-    <div id="dot-sensor"></div>
-    <span id="texto-sensor">Sin datos del sensor</span>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text"><h1>Agro<span>syph</span></h1><p>Monitoreo agrícola</p></div>
+    <button class="dark-toggle" id="darkToggle" title="Modo oscuro">🌙</button>
   </div>
-</header>
-
-<main>
-
-  <!-- ── MÉTRICAS EN TIEMPO REAL ── -->
-  <p class="seccion-titulo">Lectura actual del sensor</p>
-  <div class="metricas">
-
-    <div class="card-metrica">
-      <div class="etiqueta">pH del suelo</div>
-      <div class="valor" id="val-ph">–<span class="unidad"></span></div>
-      <div id="estado-ph" class="estado-texto estado-warn">Esperando sensor…</div>
-      <div class="ultima-vez" id="tiempo-ph"></div>
-      <div class="acento acento-verde"></div>
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Principal</span>
+    <a href="dashboard.html" class="nav-item">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <span class="nav-section-label">Herramientas</span>
+    <a href="monitoreo.html" class="nav-item activo">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span>Monitor de suelo</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="usuario-row">
+      <div class="avatar" id="avatarLetra">U</div>
+      <div class="usuario-info"><strong id="saludoUsuario">Usuario</strong><span>Agrónomo</span></div>
     </div>
-
-    <div class="card-metrica">
-      <div class="etiqueta">Humedad del suelo</div>
-      <div class="valor" id="val-humedad">–<span class="unidad">%</span></div>
-      <div id="estado-humedad" class="estado-texto estado-warn">Esperando sensor…</div>
-      <div class="ultima-vez" id="tiempo-humedad"></div>
-      <div class="acento acento-agua"></div>
-    </div>
-
-    <div class="card-metrica">
-      <div class="etiqueta">Estado general</div>
-      <div class="valor" id="val-estado" style="font-size:1.5rem;padding-top:6px">–</div>
-      <div id="estado-general" class="estado-texto estado-warn" style="margin-top:14px">Sin lectura</div>
-      <div class="acento acento-tierra"></div>
-    </div>
-
+    <button class="btn-logout" onclick="localStorage.removeItem('usuarioAgrosyph');window.location.href='index.html'">Cerrar sesión</button>
   </div>
+</aside>
 
-  <!-- ── HISTORIAL ── -->
-  <p class="seccion-titulo">Historial de lecturas</p>
-  <div class="card-historial">
-    <div class="historial-header">
-      <h3>Últimas 20 lecturas</h3>
-      <button class="btn-refrescar" onclick="cargarHistorial()">↻ Actualizar</button>
+<div class="main-wrap">
+  <header class="topbar">
+    <span class="topbar-title">Monitor de suelo <span>/ Parcelas y sensores</span></span>
+    <div class="topbar-right">
+      <button id="btnAlertas" style="position:relative;background:none;border:1px solid var(--border);border-radius:var(--r8);padding:6px 12px;cursor:pointer;color:var(--text2);font-family:var(--font);font-size:.72rem;display:flex;align-items:center;gap:6px" onclick="toggleAlertas()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        Alertas <span class="alertas-badge" id="badgeAlertas" style="display:none">0</span>
+      </button>
+      <div class="sensor-chip"><span class="sdot" id="sdotMain"></span><span id="textoSensor">Conectando…</span></div>
     </div>
-    <div id="historial-contenido">
-      <div id="cargando-historial">Cargando…</div>
-    </div>
-  </div>
+  </header>
 
-  <!-- ── PLAGAS ── -->
-  <p class="seccion-titulo">Detección de plagas y recomendaciones</p>
-  <div class="plagas-grid" id="plagas-grid">
-    <div style="color:var(--texto-sec);font-size:.85rem">Cargando plagas…</div>
-  </div>
+  <div class="contenido">
 
-  <div id="panel-recomendaciones">
-    <h3 id="reco-titulo">Recomendaciones</h3>
-    <div id="reco-cultivos" style="font-size:.75rem;color:var(--texto-sec);margin-bottom:6px"></div>
-    <div class="sintomas-box" id="reco-sintomas"></div>
-    <div class="reco-lista" id="reco-lista"></div>
-    <button id="btn-cerrar-panel" onclick="cerrarPanel()">Cerrar</button>
-  </div>
-
-</main>
-
-<script>
-// ── UTILIDADES ────────────────────────────────────────────────
-function fmtFecha(str) {
-  const d = new Date(str);
-  return d.toLocaleString('es-MX', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-function hace(str) {
-  const seg = Math.floor((Date.now() - new Date(str)) / 1000);
-  if (seg < 60)  return `hace ${seg}s`;
-  if (seg < 3600) return `hace ${Math.floor(seg/60)}min`;
-  return `hace ${Math.floor(seg/3600)}h`;
-}
-
-// ── CLASIFICAR pH ─────────────────────────────────────────────
-function clasificarPH(ph) {
-  if (ph < 5.5) return { clase:'estado-bad',  texto:'Muy ácido', emoji:'⚠️' };
-  if (ph < 6.0) return { clase:'estado-warn', texto:'Ligeramente ácido', emoji:'🟡' };
-  if (ph <= 7.5) return { clase:'estado-ok',  texto:'Óptimo', emoji:'✅' };
-  if (ph <= 8.5) return { clase:'estado-warn', texto:'Ligeramente alcalino', emoji:'🟡' };
-  return { clase:'estado-bad', texto:'Muy alcalino', emoji:'⚠️' };
-}
-
-// ── CLASIFICAR HUMEDAD ────────────────────────────────────────
-function clasificarHumedad(h) {
-  if (h < 20) return { clase:'estado-bad',  texto:'Muy seco' };
-  if (h < 40) return { clase:'estado-warn', texto:'Seco' };
-  if (h <= 70) return { clase:'estado-ok',  texto:'Adecuado' };
-  if (h <= 85) return { clase:'estado-warn', texto:'Húmedo' };
-  return { clase:'estado-bad', texto:'Saturado' };
-}
-
-// ── ACTUALIZAR TARJETAS ───────────────────────────────────────
-function actualizarMetricas(data) {
-  if (!data) return;
-
-  const clPH = clasificarPH(data.ph);
-  const clHum = clasificarHumedad(data.humedad);
-
-  document.getElementById('val-ph').innerHTML      = data.ph.toFixed(2) + '<span class="unidad"></span>';
-  document.getElementById('estado-ph').textContent = clPH.texto;
-  document.getElementById('estado-ph').className   = 'estado-texto ' + clPH.clase;
-  document.getElementById('tiempo-ph').textContent = 'Actualizado ' + hace(data.fecha);
-
-  document.getElementById('val-humedad').innerHTML      = data.humedad.toFixed(1) + '<span class="unidad">%</span>';
-  document.getElementById('estado-humedad').textContent = clHum.texto;
-  document.getElementById('estado-humedad').className   = 'estado-texto ' + clHum.clase;
-  document.getElementById('tiempo-humedad').textContent = 'Actualizado ' + hace(data.fecha);
-
-  // Estado general
-  const malo = clPH.clase === 'estado-bad' || clHum.clase === 'estado-bad';
-  const warn = clPH.clase === 'estado-warn' || clHum.clase === 'estado-warn';
-  const eg = document.getElementById('estado-general');
-  const ev = document.getElementById('val-estado');
-  if (malo) {
-    ev.textContent = '⚠️ Atención';
-    eg.textContent = 'Condición crítica';
-    eg.className = 'estado-texto estado-bad';
-  } else if (warn) {
-    ev.textContent = '🟡 Regular';
-    eg.textContent = 'Condición aceptable';
-    eg.className = 'estado-texto estado-warn';
-  } else {
-    ev.textContent = '✅ Bien';
-    eg.textContent = 'Condición óptima';
-    eg.className = 'estado-texto estado-ok';
-  }
-
-  // Dot de sensor
-  const dot = document.getElementById('dot-sensor');
-  dot.className = 'activo';
-  document.getElementById('texto-sensor').textContent = 'Sensor activo · ' + hace(data.fecha);
-}
-
-// ── POLLING ÚLTIMA LECTURA (cada 5s) ─────────────────────────
-async function obtenerUltimaLectura() {
-  try {
-    const res = await fetch('/api/sensor/ultima');
-    const data = await res.json();
-    actualizarMetricas(data);
-  } catch (e) {
-    document.getElementById('dot-sensor').className = 'error';
-    document.getElementById('texto-sensor').textContent = 'Sensor desconectado';
-  }
-}
-obtenerUltimaLectura();
-setInterval(obtenerUltimaLectura, 5000);
-
-// ── HISTORIAL ────────────────────────────────────────────────
-async function cargarHistorial() {
-  const cont = document.getElementById('historial-contenido');
-  cont.innerHTML = '<div id="cargando-historial">Cargando…</div>';
-  try {
-    const res = await fetch('/api/sensor/lecturas?limite=20');
-    const datos = await res.json();
-
-    if (!datos.length) {
-      cont.innerHTML = '<div id="cargando-historial">No hay lecturas registradas aún.</div>';
-      return;
-    }
-
-    const filas = datos.map(d => {
-      const clPH  = clasificarPH(d.ph);
-      const clHum = clasificarHumedad(d.humedad);
-      return `
-        <tr>
-          <td>${fmtFecha(d.fecha)}</td>
-          <td class="ph-val">${parseFloat(d.ph).toFixed(2)}</td>
-          <td>${parseFloat(d.humedad).toFixed(1)}%</td>
-          <td><span class="badge ${clPH.clase}">${clPH.texto}</span></td>
-          <td><span class="badge ${clHum.clase}">${clHum.texto}</span></td>
-        </tr>`;
-    }).join('');
-
-    cont.innerHTML = `
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha / Hora</th>
-            <th>pH</th>
-            <th>Humedad</th>
-            <th>Estado pH</th>
-            <th>Estado Humedad</th>
-          </tr>
-        </thead>
-        <tbody>${filas}</tbody>
-      </table>`;
-  } catch (e) {
-    cont.innerHTML = '<div id="cargando-historial">Error al cargar historial.</div>';
-  }
-}
-cargarHistorial();
-
-// ── CARGAR PLAGAS ─────────────────────────────────────────────
-async function cargarPlagas() {
-  try {
-    const res = await fetch('/api/plagas');
-    const plagas = await res.json();
-    const grid = document.getElementById('plagas-grid');
-
-    grid.innerHTML = plagas.map(p => `
-      <div class="card-plaga" id="plaga-${p.id}" onclick="seleccionarPlaga(${p.id}, '${p.nombre}', \`${p.sintomas}\`, \`${p.cultivos_afectados}\`)">
-        <h4>${p.nombre}</h4>
-        <p>${p.descripcion}</p>
-      </div>`
-    ).join('');
-  } catch(e) {
-    document.getElementById('plagas-grid').innerHTML = '<p style="color:var(--texto-sec);font-size:.85rem">Error al cargar plagas.</p>';
-  }
-}
-cargarPlagas();
-
-// ── SELECCIONAR PLAGA Y VER RECOMENDACIONES ───────────────────
-let plagaActivaId = null;
-
-async function seleccionarPlaga(id, nombre, sintomas, cultivos) {
-  // Deseleccionar anterior
-  if (plagaActivaId) {
-    const ant = document.getElementById('plaga-' + plagaActivaId);
-    if (ant) ant.classList.remove('activa');
-  }
-  document.getElementById('plaga-' + id).classList.add('activa');
-  plagaActivaId = id;
-
-  const panel = document.getElementById('panel-recomendaciones');
-  panel.style.display = 'block';
-  document.getElementById('reco-titulo').textContent = 'Recomendaciones — ' + nombre;
-  document.getElementById('reco-sintomas').textContent = '🔍 Síntomas: ' + sintomas;
-  document.getElementById('reco-cultivos').textContent = '🌱 Cultivos afectados: ' + cultivos;
-  document.getElementById('reco-lista').innerHTML = '<p style="color:var(--texto-sec);font-size:.82rem">Cargando…</p>';
-
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  try {
-    const res = await fetch(`/api/plagas/${id}/recomendaciones`);
-    const recos = await res.json();
-
-    if (!recos.length) {
-      document.getElementById('reco-lista').innerHTML = '<p style="color:var(--texto-sec);font-size:.82rem">No hay recomendaciones registradas para esta plaga.</p>';
-      return;
-    }
-
-    document.getElementById('reco-lista').innerHTML = recos.map(r => `
-      <div class="reco-item">
-        <div class="reco-trat">${r.tratamiento}</div>
-        <div class="reco-det">
-          <span>Productos:</span> ${r.productos_sugeridos || '—'} &nbsp;|&nbsp;
-          <span>Dosis:</span> ${r.dosis || '—'}
+    <!-- Panel alertas -->
+    <div id="panelAlertas" class="card" style="display:none;margin-bottom:18px">
+      <div class="card-head">
+        <div><h2>🔔 Centro de alertas</h2><p>Cambios bruscos detectados por los sensores</p></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-refrescar" onclick="cargarAlertas()">Actualizar</button>
+          <button class="btn-secondary" style="font-size:.72rem;padding:5px 12px" onclick="marcarLeidas()">✓ Leídas</button>
         </div>
-      </div>`
-    ).join('');
-  } catch(e) {
-    document.getElementById('reco-lista').innerHTML = '<p style="color:var(--rojo);font-size:.82rem">Error al cargar recomendaciones.</p>';
-  }
+      </div>
+      <div class="card-body" id="listaAlertas"><p style="color:var(--text3);font-size:.8rem">Cargando…</p></div>
+    </div>
+
+    <!-- Secciones -->
+    <p style="font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Secciones de tierra</p>
+    <div class="secciones-grid" id="seccionesGrid"><p style="color:var(--text3);font-size:.8rem">Cargando parcelas…</p></div>
+
+    <!-- Panel detalle -->
+    <div class="panel-detalle" id="panelDetalle">
+      <div class="det-header">
+        <div><div class="det-titulo" id="detNombre">—</div><div class="det-meta" id="detMeta">—</div></div>
+        <button class="btn-secondary" style="font-size:.72rem;padding:6px 14px" onclick="cerrarDetalle()">✕ Cerrar</button>
+      </div>
+      <div class="det-metricas">
+        <div class="det-card">
+          <div class="det-label">pH del suelo</div>
+          <div class="det-valor" id="detPH">–</div>
+          <div class="det-barra"><div class="det-fill f-azul" id="detBarPH" style="width:50%"></div></div>
+        </div>
+        <div class="det-card">
+          <div class="det-label">Humedad</div>
+          <div class="det-valor" id="detHum">–<span class="un">%</span></div>
+          <div class="det-barra"><div class="det-fill f-verde" id="detBarHum" style="width:50%"></div></div>
+        </div>
+        <div class="det-card">
+          <div class="det-label">Estado / Propagación</div>
+          <div class="det-valor" id="detEstado" style="font-size:1rem;margin-bottom:4px">–</div>
+          <div class="propag-box pb-ok" id="detPropag"></div>
+        </div>
+      </div>
+      <!-- Historial -->
+      <p class="det-section-title">📊 Últimas 10 lecturas</p>
+      <div id="detHistorial" style="overflow-x:auto"></div>
+      <!-- Plagas -->
+      <p class="det-section-title">🦠 Plagas reportadas en esta parcela</p>
+      <div id="detPlagas"></div>
+      <!-- Panel recos (reutilizado) -->
+      <div id="panel-recomendaciones" style="display:none;margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r16);padding:16px 18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <h3 id="reco-titulo" style="font-size:.87rem;font-weight:700"></h3>
+          <button class="btn-secondary" style="font-size:.7rem;padding:5px 12px" onclick="document.getElementById('panel-recomendaciones').style.display='none'">✕</button>
+        </div>
+        <div class="reco-sintomas" id="reco-sintomas" style="margin-bottom:10px"></div>
+        <div id="reco-lista" class="reco-items"></div>
+      </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-head"><div><h2>Mapa de propagación</h2><p>Círculos de riesgo por parcela — haz clic para ver detalle</p></div></div>
+      <div class="card-body">
+        <div id="mapaMonitoreo"></div>
+        <div class="mapa-leyenda" style="margin-top:10px">
+          <div class="leyenda-item"><div class="lc lc-ok"></div>Sin riesgo</div>
+          <div class="leyenda-item"><div class="lc lc-warn"></div>Riesgo medio</div>
+          <div class="leyenda-item"><div class="lc lc-crit"></div>Crítico</div>
+          <div class="leyenda-item"><div class="lc lc-nd"></div>Sin datos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial global -->
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Historial de lecturas</h2><p>Últimas 20 lecturas · 🟡 alerta · 🔴 crítica</p></div>
+        <button class="btn-refrescar" onclick="cargarHistorial()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Actualizar
+        </button>
+      </div>
+      <div id="historialContenido" style="overflow-x:auto"><p style="padding:16px;color:var(--text3);font-size:.8rem">Cargando…</p></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast">
+  <div style="font-size:1.2rem;flex-shrink:0">⚠️</div>
+  <div style="flex:1;min-width:0">
+    <div class="toast-tit" id="toastTit">¡Alerta!</div>
+    <div class="toast-msg" id="toastMsg"></div>
+  </div>
+  <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:.95rem" onclick="cerrarToast()">✕</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── TEMA ──────────────────────────────────────────────────────
+(function(){ const t=localStorage.getItem('agrosyph-theme'); if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); })();
+const darkBtn=document.getElementById('darkToggle');
+darkBtn.addEventListener('click',()=>{ const d=document.documentElement.getAttribute('data-theme')==='dark'; document.documentElement.setAttribute('data-theme',d?'light':'dark'); localStorage.setItem('agrosyph-theme',d?'light':'dark'); darkBtn.textContent=d?'🌙':'☀️'; setTimeout(dibujarCirculos,300); });
+if(localStorage.getItem('agrosyph-theme')==='dark') darkBtn.textContent='☀️';
+
+// ── USUARIO ───────────────────────────────────────────────────
+const u=JSON.parse(localStorage.getItem('usuarioAgrosyph')||'{}');
+if(u.nombre){ document.getElementById('saludoUsuario').textContent=u.nombre; document.getElementById('avatarLetra').textContent=u.nombre[0].toUpperCase(); }
+
+// ── UTILS ─────────────────────────────────────────────────────
+const hace=s=>{const d=Math.floor((Date.now()-new Date(s))/1000);return d<60?`hace ${d}s`:d<3600?`hace ${Math.floor(d/60)}min`:`hace ${Math.floor(d/3600)}h`;};
+const fmt=s=>new Date(s).toLocaleString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtD=s=>new Date(s).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});
+
+// ── CLASIFICAR ────────────────────────────────────────────────
+const nPH=v=>v<5.5||v>8.5?'crit':v<6||v>7.5?'warn':'ok';
+const nHum=v=>v<20||v>85?'crit':v<40||v>70?'warn':'ok';
+const nGen=(p,h)=>{const a=nPH(p),b=nHum(h);return a==='crit'||b==='crit'?'crit':a==='warn'||b==='warn'?'warn':'ok';};
+const COL={
+  ok:  {hex:'#3b82f6',fill:'rgba(59,130,246,.2)', stroke:'#3b82f6',label:'Sin riesgo',  dotCls:'dot-ok',  estCls:'estado-ok',  pbCls:'pb-ok',  nivCls:'nivel-ok' },
+  warn:{hex:'#f59e0b',fill:'rgba(245,158,11,.2)', stroke:'#f59e0b',label:'Riesgo medio',dotCls:'dot-warn',estCls:'estado-warn',pbCls:'pb-warn',nivCls:'nivel-warn'},
+  crit:{hex:'#ef4444',fill:'rgba(239,68,68,.2)',  stroke:'#ef4444',label:'Crítico',     dotCls:'dot-crit',estCls:'estado-crit',pbCls:'pb-crit',nivCls:'nivel-crit'},
+  nd:  {hex:'#999',   fill:'rgba(150,150,150,.1)',stroke:'#aaa',   label:'Sin datos',   dotCls:'dot-nd',  estCls:'estado-nd',  pbCls:'pb-ok',  nivCls:'sin-datos'}
+};
+const propagMsg=(n,r)=>{const radio=r||150;if(n==='ok')return `🔵 Condición estable. Radio monitoreo: ${radio}m. Propagación controlada.`;if(n==='warn')return `🟡 Condición moderada. Zona de alerta: ~${Math.round(radio*1.5)}m. Revisar cultivos cercanos.`;if(n==='crit')return `🔴 Condición crítica. Expansión estimada: ~${Math.round(radio*2.5)}m. Intervención inmediata.`;return 'Sin datos.';};
+
+// ── ESTADO ────────────────────────────────────────────────────
+let parcelas=[],mapaL,circulos={},ultimaTS=null,_plagasPorParcela={};
+
+// ── MAPA ──────────────────────────────────────────────────────
+function initMapa(){mapaL=L.map('mapaMonitoreo').setView([25.739816,-108.784362],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(mapaL);}
+
+function dibujarCirculos(){
+  Object.values(circulos).forEach(c=>{c.circ&&mapaL.removeLayer(c.circ);c.mk&&mapaL.removeLayer(c.mk);});
+  circulos={};
+  const bounds=[];
+  parcelas.forEach(p=>{
+    const td=p.ph!=null, nv=td?nGen(p.ph,p.humedad):'nd', col=COL[nv];
+    const r=p.radio_metros||150, rv=nv==='crit'?r*2.5:nv==='warn'?r*1.5:r;
+    const plagas=_plagasPorParcela[p.id]||[];
+    const plagasTxt=plagas.length?plagas.slice(0,3).map(x=>`<div style="font-size:.65rem;color:#c0392b">🦠 ${x.tipo_plaga}</div>`).join(''):'<div style="font-size:.65rem;color:#aaa">Sin plagas reportadas</div>';
+    const circ=L.circle([p.latitud,p.longitud],{radius:rv,color:col.stroke,fillColor:col.fill,fillOpacity:1,weight:2,dashArray:nv==='nd'?'6,4':null}).addTo(mapaL);
+    circ.bindPopup(`<div style="font-family:inherit;min-width:180px"><strong>${p.nombre}</strong><div style="font-size:.7rem;color:#888;margin:2px 0 6px">${p.cultivo||'—'} · ${p.area_hectareas||'?'} ha</div>${td?`<div style="display:flex;gap:12px;margin-bottom:6px"><div><div style="font-size:.58rem;font-weight:700;color:#999">pH</div><strong>${parseFloat(p.ph).toFixed(2)}</strong></div><div><div style="font-size:.58rem;font-weight:700;color:#999">Humedad</div><strong>${parseFloat(p.humedad).toFixed(1)}%</strong></div></div><div style="font-size:.7rem;font-weight:700;color:${col.hex};margin-bottom:6px">${col.label}</div>`:'<div style="font-size:.74rem;color:#aaa;margin-bottom:6px">Sin lecturas</div>'}<div style="border-top:1px solid #eee;padding-top:6px">${plagasTxt}</div></div>`);
+    circ.on('click',()=>abrirDetalle(p.id));
+    const mk=L.circleMarker([p.latitud,p.longitud],{radius:5,color:col.stroke,fillColor:col.hex,fillOpacity:1,weight:2}).addTo(mapaL);
+    mk.on('click',()=>abrirDetalle(p.id));
+    circulos[p.id]={circ,mk};
+    bounds.push([p.latitud,p.longitud]);
+  });
+  if(bounds.length) mapaL.fitBounds(bounds,{padding:[60,60]});
 }
 
-function cerrarPanel() {
-  document.getElementById('panel-recomendaciones').style.display = 'none';
-  if (plagaActivaId) {
-    const el = document.getElementById('plaga-' + plagaActivaId);
-    if (el) el.classList.remove('activa');
-    plagaActivaId = null;
-  }
+// ── PLAGAS ────────────────────────────────────────────────────
+async function cargarPlagasParcela(id){
+  try{ const r=await fetch(`/api/parcelas/${id}/plagas`); return await r.json(); }catch(e){ return []; }
 }
+
+function renderChipsPlagas(plagas){
+  if(!plagas||!plagas.length) return '';
+  const unicas=[...new Map(plagas.map(p=>[p.tipo_plaga,p])).values()].slice(0,3);
+  const chips=unicas.map(p=>{const dias=Math.floor((Date.now()-new Date(p.fecha_reporte))/86400000);return `<span class="plaga-chip ${dias<=7?'reciente':''}">🦠 ${p.tipo_plaga}</span>`;}).join('');
+  const extra=plagas.length>3?`<span class="plaga-chip" style="background:var(--bg2);color:var(--text3);border-color:var(--border)">+${plagas.length-3}</span>`:'';
+  return `<div class="sec-plagas">${chips}${extra}</div>`;
+}
+
+function renderDetallePlagas(plagas){
+  const cont=document.getElementById('detPlagas');
+  if(!plagas.length){cont.innerHTML='<div class="sin-plagas">✅ Sin plagas reportadas en esta parcela</div>';return;}
+  cont.innerHTML=plagas.map(p=>{
+    const btnReco=p.plaga_id?`<button class="btn-ver-reco-p" onclick="abrirRecoPlaga(${p.plaga_id},'${p.tipo_plaga.replace(/'/g,"\\'")}','${(p.sintomas||'').replace(/'/g,"\\'")}')">Ver recomendaciones →</button>`:'';
+    return `<div class="plaga-det-item"><div class="plaga-det-head"><div class="plaga-det-nombre">🦠 ${p.tipo_plaga}</div><span class="plaga-det-fecha">${fmtD(p.fecha_reporte)}</span></div><div class="plaga-det-cultivo">Cultivo: <strong>${p.cultivo}</strong></div><div class="plaga-det-desc">${p.descripcion||''}</div>${p.sintomas?`<div class="plaga-det-sint">🔍 ${p.sintomas}</div>`:''}<div class="plaga-det-reporter">Reportado por: ${p.reportado_por||'—'}</div>${btnReco}</div>`;
+  }).join('');
+}
+
+async function abrirRecoPlaga(id,nombre,sintomas){
+  const panel=document.getElementById('panel-recomendaciones');
+  document.getElementById('reco-titulo').textContent=nombre;
+  document.getElementById('reco-sintomas').textContent='🔍 '+sintomas;
+  document.getElementById('reco-lista').innerHTML='<div style="color:var(--text3);font-size:.8rem">Cargando…</div>';
+  panel.style.display='block';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  try{
+    const r=await fetch(`/api/plagas/${id}/recomendaciones`);
+    const recos=await r.json();
+    if(!recos.length){document.getElementById('reco-lista').innerHTML='<p style="color:var(--text3);font-size:.8rem">Sin recomendaciones.</p>';return;}
+    document.getElementById('reco-lista').innerHTML=recos.map(r=>`<div class="reco-item"><div class="reco-trat">${r.tratamiento}</div><div class="reco-det"><b>Productos:</b> ${r.productos_sugeridos||'—'} · <b>Dosis:</b> ${r.dosis||'—'}</div></div>`).join('');
+  }catch(e){document.getElementById('reco-lista').innerHTML='<p style="color:var(--r600);font-size:.8rem">Error.</p>';}
+}
+
+// ── CARGAR PARCELAS ───────────────────────────────────────────
+async function cargarParcelas(){
+  try{
+    const r=await fetch('/api/parcelas');
+    parcelas=await r.json();
+    const todasPlagas=await Promise.all(parcelas.map(p=>cargarPlagasParcela(p.id)));
+    parcelas.forEach((p,i)=>{ _plagasPorParcela[p.id]=todasPlagas[i]||[]; });
+    renderSecciones();
+    dibujarCirculos();
+  }catch(e){ document.getElementById('seccionesGrid').innerHTML='<p style="color:var(--r600);font-size:.8rem">Error al cargar parcelas.</p>'; }
+}
+
+function renderSecciones(){
+  const g=document.getElementById('seccionesGrid');
+  if(!parcelas.length){g.innerHTML='<p style="color:var(--text3);font-size:.8rem">No hay parcelas registradas.</p>';return;}
+  g.innerHTML=parcelas.map(p=>{
+    const td=p.ph!=null,nv=td?nGen(p.ph,p.humedad):'nd',col=COL[nv];
+    const plagas=_plagasPorParcela[p.id]||[];
+    return `<div class="seccion-card ${col.nivCls}" id="sec-${p.id}" onclick="abrirDetalle(${p.id})">
+      <div class="sec-header"><div><div class="sec-nombre">${p.nombre}</div><div class="sec-cultivo">${p.cultivo||'Sin cultivo'} · ${p.area_hectareas||'?'} ha</div></div><div class="nivel-dot ${col.dotCls}"></div></div>
+      <div class="sec-metricas">
+        <div class="sec-metrica"><div class="sec-metrica-label">pH</div><div class="sec-metrica-valor">${td?parseFloat(p.ph).toFixed(2):'–'}</div></div>
+        <div class="sec-metrica"><div class="sec-metrica-label">Humedad</div><div class="sec-metrica-valor">${td?parseFloat(p.humedad).toFixed(1):'–'}<span class="un">${td?'%':''}</span></div></div>
+        <div class="sec-metrica"><div class="sec-metrica-label">Estado</div><div style="margin-top:4px"><span class="sec-estado ${col.estCls}">${col.label}</span></div></div>
+      </div>
+      <div class="sec-sensor"><div class="sec-sdot" style="background:${p.sensor_activo?'var(--g400)':'#aaa'}"></div>${p.sensor_nombre||'Sin sensor'} ${p.sensor_activo?'· activo':'· inactivo'}</div>
+      <div class="sec-ultima">${td?`Última: ${hace(p.ultima_lectura)}`:'Sin lecturas'}</div>
+      ${renderChipsPlagas(plagas)}
+    </div>`;
+  }).join('');
+}
+
+// ── DETALLE ───────────────────────────────────────────────────
+async function abrirDetalle(id){
+  const p=parcelas.find(x=>x.id===id); if(!p) return;
+  document.querySelectorAll('.seccion-card').forEach(c=>c.classList.remove('activa'));
+  document.getElementById(`sec-${id}`)?.classList.add('activa');
+  if(mapaL) mapaL.setView([p.latitud,p.longitud],14);
+  circulos[id]?.circ?.openPopup();
+  const td=p.ph!=null,nv=td?nGen(p.ph,p.humedad):'nd',col=COL[nv];
+  document.getElementById('detNombre').textContent=p.nombre;
+  document.getElementById('detMeta').textContent=`${p.cultivo||'Sin cultivo'} · ${p.area_hectareas||'?'} ha · Sensor: ${p.sensor_nombre||'ninguno'}`;
+  document.getElementById('detPH').textContent=td?parseFloat(p.ph).toFixed(2):'–';
+  document.getElementById('detHum').innerHTML=td?`${parseFloat(p.humedad).toFixed(1)}<span class="un">%</span>`:'–';
+  document.getElementById('detEstado').innerHTML=`<span class="sec-estado ${col.estCls}">${col.label}</span>`;
+  document.getElementById('detBarPH').style.width=td?`${(p.ph/14)*100}%`:'0%';
+  document.getElementById('detBarHum').style.width=td?`${Math.min(p.humedad,100)}%`:'0%';
+  const propEl=document.getElementById('detPropag');
+  propEl.className=`propag-box ${col.pbCls}`;
+  propEl.textContent=propagMsg(nv,p.radio_metros);
+  document.getElementById('panelDetalle').classList.add('visible');
+  document.getElementById('panelDetalle').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('panel-recomendaciones').style.display='none';
+
+  // Historial
+  if(p.sensor_id){
+    try{const r=await fetch(`/api/sensor/lecturas?limite=10&id_sensor=${p.sensor_id}`);renderDetHist(await r.json());}
+    catch(e){document.getElementById('detHistorial').innerHTML='<p style="color:var(--r600);font-size:.75rem">Error</p>';}
+  } else { document.getElementById('detHistorial').innerHTML='<p style="color:var(--text3);font-size:.75rem">Sin sensor asignado</p>'; }
+
+  // Plagas
+  const plagas=_plagasPorParcela[id]||await cargarPlagasParcela(id);
+  renderDetallePlagas(plagas);
+}
+
+function renderDetHist(datos){
+  if(!datos.length){document.getElementById('detHistorial').innerHTML='<p style="color:var(--text3);font-size:.75rem">Sin lecturas</p>';return;}
+  const badg=n=>`<span class="tbl-badge ${n==='ok'?'mb-ok':n==='warn'?'mb-warn':'mb-bad'}">${n==='ok'?'Óptimo':n==='warn'?'Alerta':'Crítico'}</span>`;
+  const filas=datos.map(d=>{const ng=nGen(d.ph,d.humedad),rc=d.alerta?(ng==='crit'?'row-crit':'row-warn'):'';return `<tr class="${rc}"><td>${fmt(d.fecha)}</td><td class="ph-val">${parseFloat(d.ph).toFixed(2)}</td><td>${parseFloat(d.humedad).toFixed(1)}%</td><td>${badg(nPH(d.ph))}</td><td>${badg(nHum(d.humedad))}</td><td>${d.alerta?`⚠️ <small>${d.motivo_alerta||''}</small>`:'—'}</td></tr>`;}).join('');
+  document.getElementById('detHistorial').innerHTML=`<table><thead><tr><th>Fecha</th><th>pH</th><th>Humedad</th><th>Estado pH</th><th>Estado Hum.</th><th>Alerta</th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+function cerrarDetalle(){document.getElementById('panelDetalle').classList.remove('visible');document.querySelectorAll('.seccion-card').forEach(c=>c.classList.remove('activa'));}
+
+// ── HISTORIAL GLOBAL ──────────────────────────────────────────
+async function cargarHistorial(){
+  const ct=document.getElementById('historialContenido');
+  ct.innerHTML='<p style="padding:14px;color:var(--text3);font-size:.8rem">Cargando…</p>';
+  try{
+    const r=await fetch('/api/sensor/lecturas?limite=20'),d=await r.json();
+    if(!d.length){ct.innerHTML='<p style="padding:14px;color:var(--text3);font-size:.8rem">Sin lecturas.</p>';return;}
+    const badg=n=>`<span class="tbl-badge ${n==='ok'?'mb-ok':n==='warn'?'mb-warn':'mb-bad'}">${n==='ok'?'Óptimo':n==='warn'?'Alerta':'Crítico'}</span>`;
+    const filas=d.map(x=>{const ng=nGen(x.ph,x.humedad),rc=x.alerta?(ng==='crit'?'row-crit':'row-warn'):'';return `<tr class="${rc}"><td>${fmt(x.fecha)}</td><td class="ph-val">${parseFloat(x.ph).toFixed(2)}</td><td>${parseFloat(x.humedad).toFixed(1)}%</td><td>${badg(nPH(x.ph))}</td><td>${badg(nHum(x.humedad))}</td><td>${x.alerta?`⚠️ <small>${x.motivo_alerta||''}</small>`:'—'}</td></tr>`;}).join('');
+    ct.innerHTML=`<table><thead><tr><th>Fecha</th><th>pH</th><th>Humedad</th><th>Estado pH</th><th>Estado Hum.</th><th>Alerta</th></tr></thead><tbody>${filas}</tbody></table>`;
+  }catch(e){ct.innerHTML='<p style="padding:14px;color:var(--r600);font-size:.8rem">Error.</p>';}
+}
+
+// ── ALERTAS ───────────────────────────────────────────────────
+let alertasOpen=false;
+function toggleAlertas(){alertasOpen=!alertasOpen;document.getElementById('panelAlertas').style.display=alertasOpen?'block':'none';if(alertasOpen)cargarAlertas();}
+async function cargarAlertas(){
+  const ct=document.getElementById('listaAlertas');
+  try{const r=await fetch('/api/alertas?limite=20'),a=await r.json();
+    if(!a.length){ct.innerHTML='<p style="color:var(--text3);font-size:.8rem">Sin alertas.</p>';return;}
+    ct.innerHTML=a.map(x=>`<div class="alerta-item"><div class="alerta-icono ${x.nivel==='critica'?'ai-crit':'ai-warn'}">${x.nivel==='critica'?'🔴':'🟡'}</div><div style="flex:1;min-width:0"><div class="alerta-msg">${x.mensaje||'—'}</div><div class="alerta-meta"><span class="${x.nivel==='critica'?'lv-crit':'lv-warn'}">${x.nivel==='critica'?'CRÍTICA':'ALERTA'}</span> · ${x.sensor_nombre||'Sensor'} · ${x.parcela_nombre||'—'} · ${fmt(x.creada_en)}</div></div></div>`).join('');
+  }catch(e){ct.innerHTML='<p style="color:var(--r600);font-size:.8rem">Error.</p>';}
+}
+async function marcarLeidas(){await fetch('/api/alertas/marcar-leidas',{method:'PUT'});document.getElementById('badgeAlertas').style.display='none';cargarAlertas();}
+async function actualizarBadge(){try{const r=await fetch('/api/alertas/no-leidas'),d=await r.json();const b=document.getElementById('badgeAlertas');b.textContent=d.total;b.style.display=d.total>0?'inline-flex':'none';}catch(e){}}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let toastT;
+function mostrarToast(msg,nv){document.getElementById('toastTit').textContent=nv==='crit'?'🔴 ¡Alerta crítica!':'🟡 Alerta detectada';document.getElementById('toastMsg').textContent=msg;const t=document.getElementById('toast');t.style.borderColor=nv==='crit'?'#ef4444':'#f59e0b';t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(cerrarToast,8000);}
+function cerrarToast(){document.getElementById('toast').classList.remove('show');}
+
+// ── POLLING ───────────────────────────────────────────────────
+async function polling(){
+  try{
+    const r=await fetch('/api/sensor/ultima'),d=await r.json();
+    const dot=document.getElementById('sdotMain'),txt=document.getElementById('textoSensor');
+    if(d){dot.className='sdot ok';txt.textContent=`Activo · ${hace(d.fecha)}`;
+      if(d.fecha&&d.fecha!==ultimaTS){ultimaTS=d.fecha;
+        if(d.alerta&&d.motivo_alerta){mostrarToast(d.motivo_alerta,nGen(d.ph,d.humedad)==='crit'?'crit':'warn');actualizarBadge();}
+        cargarParcelas();
+      }
+    }else{dot.className='sdot err';txt.textContent='Sin señal';}
+  }catch(e){document.getElementById('sdotMain').className='sdot err';}
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+initMapa();
+cargarParcelas();
+cargarHistorial();
+actualizarBadge();
+polling();
+setInterval(polling,5000);
+setInterval(cargarHistorial,30000);
 </script>
 </body>
 </html>

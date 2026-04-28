@@ -1,0 +1,313 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap');
+:root{--green:#1D9E75;--green-light:#E1F5EE;--green-dark:#085041;--amber:#BA7517;--amber-light:#FAEEDA;--teal:#0F6E56;--coral:#993C1D;--coral-light:#FAECE7;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;}
+.bp{padding:2rem 0;}
+.logo-bar{display:flex;align-items:center;gap:12px;margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:0.5px solid var(--color-border-tertiary);}
+.logo-mark{width:42px;height:42px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:22px;height:22px;fill:white;}
+.brand{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--color-text-primary);}
+.tagline{font-size:12px;color:var(--color-text-secondary);margin-top:1px;}
+.section{margin-bottom:2.5rem;}
+.sec-header{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;}
+.sec-num{width:26px;height:26px;border-radius:50%;background:var(--green);color:white;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sec-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--color-text-primary);}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1.25rem;}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;}
+.card-label{font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.card-val{font-size:22px;font-weight:500;color:var(--color-text-primary);}
+.card-sub{font-size:12px;color:var(--color-text-secondary);margin-top:3px;}
+.card-accent{border-left:3px solid var(--green);}
+.card-amber{border-left:3px solid var(--amber);}
+.card-coral{border-left:3px solid var(--coral);}
+.bom{width:100%;border-collapse:collapse;font-size:13px;}
+.bom th{text-align:left;padding:6px 10px;font-size:11px;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);}
+.bom td{padding:9px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);}
+.bom tr:last-child td{border-bottom:none;font-weight:500;background:var(--color-background-secondary);}
+.bom .money{text-align:right;font-variant-numeric:tabular-nums;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-green{background:var(--green-light);color:var(--green-dark);}
+.badge-amber{background:var(--amber-light);color:var(--amber);}
+.badge-coral{background:var(--coral-light);color:var(--coral);}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.plan{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;}
+.plan-pro{border:2px solid var(--green);position:relative;}
+.plan-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--green);color:white;font-size:10px;font-weight:500;padding:3px 12px;border-radius:20px;white-space:nowrap;}
+.plan-name{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px;}
+.plan-price{font-size:26px;font-weight:500;color:var(--color-text-primary);}
+.plan-period{font-size:12px;color:var(--color-text-secondary);}
+.plan-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:12px 0;}
+.feature{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;font-size:12px;color:var(--color-text-secondary);}
+.feat-dot{width:5px;height:5px;border-radius:50%;background:var(--green);margin-top:5px;flex-shrink:0;}
+.eq-bar-wrap{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1.25rem;margin-top:1rem;}
+.eq-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;}
+.eq-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.eq-name{font-size:12px;color:var(--color-text-secondary);width:130px;flex-shrink:0;}
+.eq-bar-bg{flex:1;height:8px;background:var(--color-background-primary);border-radius:4px;overflow:hidden;border:0.5px solid var(--color-border-tertiary);}
+.eq-bar-fill{height:100%;border-radius:4px;}
+.eq-amt{font-size:12px;font-weight:500;color:var(--color-text-primary);min-width:80px;text-align:right;font-variant-numeric:tabular-nums;}
+.insight{background:var(--green-light);border-left:3px solid var(--green);border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;padding:.85rem 1rem;font-size:12.5px;color:var(--green-dark);line-height:1.6;}
+.metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.9rem 1rem;}
+.metric-l{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;}
+.metric-v{font-size:20px;font-weight:500;color:var(--color-text-primary);}
+.inv-table{width:100%;border-collapse:collapse;font-size:13px;}
+.inv-table td{padding:8px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);}
+.inv-table tr:last-child td{font-weight:500;border-bottom:none;}
+.inv-table .r{text-align:right;font-variant-numeric:tabular-nums;}
+.subtitle{font-size:12px;color:var(--color-text-secondary);margin-bottom:1rem;margin-top:-0.5rem;padding-left:36px;}
+.divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:2rem 0;}
+</style>
+
+<div class="bp">
+
+<div class="logo-bar">
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 2c4.4 0 8 3.6 8 8s-3.6 8-8 8-8-3.6-8-8 3.6-8 8-8zm0 3a5 5 0 00-5 5 5 5 0 005 5 5 5 0 005-5 5 5 0 00-5-5zm0 2a3 3 0 013 3 3 3 0 01-3 3 3 3 0 01-3-3 3 3 0 013-3z"/></svg>
+  </div>
+  <div>
+    <div class="brand">Agrosyph</div>
+    <div class="tagline">Plan de Negocios · Análisis Financiero</div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <span class="badge badge-green">Prototipo funcional</span>
+    <span style="font-size:12px;color:var(--color-text-secondary);">2025</span>
+  </div>
+</div>
+
+<!-- SECCIÓN 1: INVERSIÓN INICIAL -->
+<div class="section">
+  <div class="sec-header">
+    <div class="sec-num">1</div>
+    <div class="sec-title">Inversión inicial y activos</div>
+  </div>
+  <div class="subtitle">Capital requerido para desarrollo e infraestructura de arranque</div>
+
+  <table class="inv-table" style="margin-bottom:1rem;">
+    <tr>
+      <td>Infraestructura de cómputo</td>
+      <td style="font-size:11px;color:var(--color-text-secondary);">Hardware de alto rendimiento para desarrollo</td>
+      <td class="r">$19,000</td>
+      <td style="text-align:right;"><span class="badge badge-amber">Activo tangible</span></td>
+    </tr>
+    <tr>
+      <td>Capital intelectual</td>
+      <td style="font-size:11px;color:var(--color-text-secondary);">300 hrs · Backend + Frontend + Firmware · $25/hr</td>
+      <td class="r">$7,500</td>
+      <td style="text-align:right;"><span class="badge badge-green">Activo intangible</span></td>
+    </tr>
+    <tr>
+      <td style="font-weight:500;">Total inversión inicial</td>
+      <td></td>
+      <td class="r" style="font-weight:500;">$26,500 MXN</td>
+      <td></td>
+    </tr>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- SECCIÓN 2: COSTO UNITARIO -->
+<div class="section">
+  <div class="sec-header">
+    <div class="sec-num">2</div>
+    <div class="sec-title">Costo unitario de producción — nodo sensor</div>
+  </div>
+  <div class="subtitle">Bill of Materials (BOM) por unidad con transmisión remota</div>
+
+  <table class="bom">
+    <thead>
+      <tr>
+        <th>Componente</th>
+        <th>Especificación</th>
+        <th class="money">Costo</th>
+        <th style="text-align:right;">% del BOM</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Unidad de procesamiento y comunicación</td>
+        <td style="color:var(--color-text-secondary);font-size:12px;">Microcontrolador Wi-Fi para enlace cloud</td>
+        <td class="money">$300</td>
+        <td style="text-align:right;">
+          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+            <div style="width:40px;height:5px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:11.8%;height:100%;background:var(--green);border-radius:3px;"></div></div>
+            <span style="font-size:11px;color:var(--color-text-secondary);">11.8%</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>Módulo de sensado fitosanitario</td>
+        <td style="color:var(--color-text-secondary);font-size:12px;">Sensor pH grado industrial</td>
+        <td class="money">$1,500</td>
+        <td style="text-align:right;">
+          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+            <div style="width:40px;height:5px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:58.8%;height:100%;background:var(--green);border-radius:3px;"></div></div>
+            <span style="font-size:11px;color:var(--color-text-secondary);">58.8%</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>Subsistema energético</td>
+        <td style="color:var(--color-text-secondary);font-size:12px;">Celdas de litio + gestión de carga</td>
+        <td class="money">$500</td>
+        <td style="text-align:right;">
+          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+            <div style="width:40px;height:5px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:19.6%;height:100%;background:var(--amber);border-radius:3px;"></div></div>
+            <span style="font-size:11px;color:var(--color-text-secondary);">19.6%</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>Encapsulado de protección</td>
+        <td style="color:var(--color-text-secondary);font-size:12px;">Carcasa IP67 — resistente a clima y riego</td>
+        <td class="money">$250</td>
+        <td style="text-align:right;">
+          <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+            <div style="width:40px;height:5px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:9.8%;height:100%;background:var(--coral);border-radius:3px;"></div></div>
+            <span style="font-size:11px;color:var(--color-text-secondary);">9.8%</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Costo total por nodo</strong></td>
+        <td></td>
+        <td class="money"><strong>$2,550</strong></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="cards" style="margin-top:1rem;">
+    <div class="card card-accent">
+      <div class="card-label">Precio de venta</div>
+      <div class="card-val">$3,800</div>
+      <div class="card-sub">MXN por nodo</div>
+    </div>
+    <div class="card card-accent">
+      <div class="card-label">Margen bruto</div>
+      <div class="card-val">33%</div>
+      <div class="card-sub">Utilidad por unidad vendida</div>
+    </div>
+    <div class="card card-amber">
+      <div class="card-label">Ganancia por nodo</div>
+      <div class="card-val">$1,250</div>
+      <div class="card-sub">Precio – BOM</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECCIÓN 3: MODELO DE INGRESOS -->
+<div class="section">
+  <div class="sec-header">
+    <div class="sec-num">3</div>
+    <div class="sec-title">Modelo de ingresos — SaaS + Hardware</div>
+  </div>
+  <div class="subtitle">Esquema híbrido para sostenibilidad financiera de largo plazo</div>
+
+  <div class="plans">
+    <div class="plan">
+      <div class="plan-name">Plan básico</div>
+      <div class="plan-price">$250 <span class="plan-period">/ mes</span></div>
+      <hr class="plan-divider">
+      <div class="feature"><div class="feat-dot"></div>Dashboard web · 1 nodo sensor</div>
+      <div class="feature"><div class="feat-dot"></div>Visualización de mapa vivo por microzona</div>
+      <div class="feature"><div class="feat-dot"></div>Sistema de alertas comunitarias</div>
+    </div>
+    <div class="plan plan-pro">
+      <div class="plan-tag">Recomendado</div>
+      <div class="plan-name">Plan Pro</div>
+      <div class="plan-price">$550 <span class="plan-period">/ mes</span></div>
+      <hr class="plan-divider">
+      <div class="feature"><div class="feat-dot"></div>Gestión multiparcela</div>
+      <div class="feature"><div class="feat-dot"></div>Historial ilimitado de datos para trazabilidad</div>
+      <div class="feature"><div class="feat-dot"></div>Reportes exportables para auditorías fitosanitarias</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECCIÓN 4: GASTOS FIJOS -->
+<div class="section">
+  <div class="sec-header">
+    <div class="sec-num">4</div>
+    <div class="sec-title">Gastos fijos de operación</div>
+  </div>
+  <div class="subtitle">Estructura de costos recurrentes para sostenimiento de la plataforma</div>
+
+  <div class="eq-bar-wrap">
+    <div class="eq-row">
+      <div class="eq-name">Infraestructura cloud</div>
+      <div class="eq-bar-bg"><div class="eq-bar-fill" style="width:71%;background:var(--green);"></div></div>
+      <div class="eq-amt">$250 / mes</div>
+    </div>
+    <div class="eq-row">
+      <div class="eq-name">Gestión de dominio</div>
+      <div class="eq-bar-bg"><div class="eq-bar-fill" style="width:29%;background:var(--amber);"></div></div>
+      <div class="eq-amt">$350 / año</div>
+    </div>
+    <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12px;color:var(--color-text-secondary);">Total mensual equivalente</span>
+      <span style="font-size:15px;font-weight:500;color:var(--color-text-primary);">~$279 MXN / mes</span>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SECCIÓN 5: PUNTO DE EQUILIBRIO -->
+<div class="section">
+  <div class="sec-header">
+    <div class="sec-num">5</div>
+    <div class="sec-title">Viabilidad y punto de equilibrio</div>
+  </div>
+  <div class="subtitle">Proyección financiera del primer ciclo agrícola</div>
+
+  <div class="metric-row" style="margin-bottom:1rem;">
+    <div class="metric">
+      <div class="metric-l">Punto de equilibrio SaaS</div>
+      <div class="metric-v">1 usuario</div>
+    </div>
+    <div class="metric">
+      <div class="metric-l">Usuarios para cubrir gastos fijos</div>
+      <div class="metric-v">Plan Básico</div>
+    </div>
+    <div class="metric">
+      <div class="metric-l">Recuperación de hardware</div>
+      <div class="metric-v">Ciclo 1</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:1rem;">
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px;">Escenario de recuperación — inversión en infraestructura</div>
+    <table class="inv-table">
+      <tr>
+        <td>Inversión en cómputo a recuperar</td>
+        <td class="r" style="color:var(--coral);">$19,000</td>
+      </tr>
+      <tr>
+        <td>Nodos necesarios para recuperar (solo hardware)</td>
+        <td class="r">~16 nodos</td>
+      </tr>
+      <tr>
+        <td>Con 10 suscriptores Plan Pro · 12 meses</td>
+        <td class="r" style="color:var(--green);">$66,000</td>
+      </tr>
+      <tr>
+        <td style="font-weight:500;">Excedente estimado año 1 (10 users Pro + 16 nodos)</td>
+        <td class="r" style="font-weight:500;color:var(--green);">$47,000 MXN</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="insight">
+    Con la captación de un solo usuario en Plan Básico ($250/mes), Agrosyph cubre íntegramente sus gastos fijos de servidor. La recuperación del capital en infraestructura de cómputo se proyecta dentro del primer ciclo agrícola de operación comercial, validando la viabilidad del modelo desde etapa temprana.
+  </div>
+</div>
+
+</div>

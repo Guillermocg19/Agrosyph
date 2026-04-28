@@ -1,415 +1,537 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agrosyph - Panel</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agrosyph — Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="shared.css" />
     <style>
-        /* ── Selector de plaga ── */
-        .plaga-selector-wrap { position: relative; }
-
-        #plagaSelect {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #d0d8d2;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: .88rem;
-            background: #fff;
-            color: #1a2e22;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b8c75' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            cursor: pointer;
-            transition: border-color .2s;
+        .parcela-info-box {
+            display: none; margin-top: 7px; padding: 8px 11px;
+            background: var(--g50); border-left: 3px solid var(--g400);
+            border-radius: 0 var(--r8) var(--r8) 0;
+            font-size: .72rem; color: var(--text2); line-height: 1.5;
+            animation: fadeIn .2s ease;
         }
-        #plagaSelect:focus {
-            outline: none;
-            border-color: #40916c;
-            box-shadow: 0 0 0 3px rgba(64,145,108,.12);
+        .form-nueva-parcela {
+            display: none; margin-top: 10px;
+            background: var(--g50); border: 1.5px dashed var(--g300);
+            border-radius: var(--r12); padding: 14px 16px;
+            animation: fadeIn .2s ease;
         }
-
-        /* ── Tarjeta de síntomas ── */
-        #plagaInfo {
-            display: none;
-            margin-top: 10px;
-            background: #fffbf0;
-            border-left: 3px solid #e9c46a;
-            border-radius: 0 8px 8px 0;
-            padding: 10px 14px;
-            font-size: .8rem;
-            color: #6b5a1a;
-            line-height: 1.5;
-            animation: slideDown .25s ease;
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-6px); }
-            to   { opacity: 1; transform: none; }
-        }
-        #plagaInfo strong { color: #4a3800; display: block; margin-bottom: 3px; font-size: .75rem; letter-spacing: .5px; text-transform: uppercase; }
-        #plagaInfo .cultivos-tag {
-            display: inline-block;
-            margin-top: 6px;
-            background: #d8f3dc;
-            color: #2d6a4f;
-            padding: 2px 9px;
-            border-radius: 10px;
-            font-size: .72rem;
-            font-weight: 500;
-        }
-
-        /* ── Botón ver recomendaciones ── */
-        #btnVerRecos {
-            display: none;
-            margin-top: 8px;
-            font-family: inherit;
-            font-size: .78rem;
-            background: #2d6a4f;
-            color: #fff;
-            border: none;
-            padding: 7px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: background .2s;
-        }
-        #btnVerRecos:hover { background: #40916c; }
-
-        /* ── Modal de recomendaciones ── */
-        #modalRecos {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.45);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        #modalRecos.abierto { display: flex; }
-        .modal-box {
-            background: #fff;
-            border-radius: 16px;
-            padding: 28px 30px;
-            max-width: 520px;
-            width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
-            animation: popIn .25s ease;
-        }
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(.96); }
-            to   { opacity: 1; transform: scale(1); }
-        }
-        .modal-box h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: #1a2e22; }
-        .modal-sintomas {
-            background: #fffbf0;
-            border-left: 3px solid #e9c46a;
-            padding: 9px 13px;
-            border-radius: 0 8px 8px 0;
-            font-size: .78rem;
-            color: #6b5a1a;
-            margin: 10px 0 16px;
-            line-height: 1.5;
-        }
-        .reco-item {
-            background: #f7f9f5;
-            border-left: 3px solid #40916c;
-            border-radius: 0 8px 8px 0;
-            padding: 12px 14px;
-            margin-bottom: 10px;
-        }
-        .reco-item .reco-trat { font-size: .85rem; font-weight: 500; color: #1a2e22; margin-bottom: 5px; }
-        .reco-item .reco-det  { font-size: .75rem; color: #6b8c75; }
-        .reco-item .reco-det span { color: #a07850; }
-        .modal-cerrar {
-            margin-top: 14px;
-            font-family: inherit;
-            font-size: .78rem;
-            background: none;
-            border: 1px solid #d0d8d2;
-            color: #6b8c75;
-            padding: 6px 18px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-        .modal-cerrar:hover { background: #f7f9f5; }
+        .np-titulo { font-size:.68rem; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--g600); margin-bottom:10px; }
+        .msg-parcela { font-size:.72rem; font-weight:600; min-height:14px; margin-top:6px; }
+        [data-theme="dark"] .form-nueva-parcela { background: var(--g100); border-color: var(--g200); }
+        [data-theme="dark"] .parcela-info-box   { background: var(--g100); }
     </style>
 </head>
+
 <body>
-    <div class="dashboard">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-text">
+                <h1>Agro<span>syph</span></h1>
+                <p>Monitoreo agrícola</p>
+            </div>
+            <button class="dark-toggle" id="darkToggle" title="Modo oscuro">🌙</button>
+        </div>
+        <nav class="sidebar-nav">
+            <span class="nav-section-label">Principal</span>
+            <button class="nav-item activo">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Dashboard
+            </button>
+            <span class="nav-section-label">Herramientas</span>
+            <a href="monitor.html" class="nav-item highlight">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Monitor de suelo
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="usuario-row">
+                <div class="avatar" id="avatarLetra">?</div>
+                <div class="usuario-info">
+                    <strong id="saludoUsuario">Usuario</strong>
+                    <span>Agrónomo</span>
+                </div>
+            </div>
+            <button class="btn-logout" id="btnCerrarSesion">Cerrar sesión</button>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-wrap">
         <header class="topbar">
-            <div class="topbar-left">
-                <h1>Agrosyph</h1>
-                <p>Monitoreo y gestión de reportes de plagas</p>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+                <span class="topbar-title">Dashboard <span>/ Reportes de plagas</span></span>
             </div>
             <div class="topbar-right">
-                <div class="usuario-box">
-                    <span class="usuario-label">Usuario activo</span>
-                    <strong id="saludoUsuario">Bienvenido</strong>
-                </div>
-                <button id="btnCerrarSesion" class="btn-principal">Cerrar sesión</button>
+                <a href="monitor.html" class="sensor-chip">
+                    <div class="sdot" id="sensorDot"></div>
+                    <span id="sensorTexto">Sensor</span>
+                </a>
             </div>
         </header>
 
-        <main class="dashboard-contenido">
-            <section class="resumen-grid">
-                <div class="resumen-card">
-                    <span class="resumen-titulo">Total reportes</span>
-                    <strong id="totalReportes">0</strong>
-                </div>
-                <div class="resumen-card">
-                    <span class="resumen-titulo">Con imagen</span>
-                    <strong id="totalConImagen">0</strong>
-                </div>
-                <div class="resumen-card">
-                    <span class="resumen-titulo">Mis reportes</span>
-                    <strong id="misReportes">0</strong>
-                </div>
-            </section>
+        <div class="contenido">
 
-            <section class="panel-principal">
-                <div class="panel-izquierda">
-                    <div class="modulo-card formulario-card">
-                        <div class="modulo-header">
-                            <div>
-                                <h2 id="tituloFormulario">Nuevo reporte</h2>
-                                <p>Registra un hallazgo con sus datos principales.</p>
-                            </div>
+            <!-- STATS -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon ic-verde">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <div class="stat-body"><span>Total reportes</span><strong id="totalReportes">0</strong></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon ic-tierra">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a07850" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </div>
+                    <div class="stat-body"><span>Con imagen</span><strong id="totalConImagen">0</strong></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon ic-azul">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a5f8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="stat-body"><span>Mis reportes</span><strong id="misReportes">0</strong></div>
+                </div>
+            </div>
+
+            <!-- GRID PRINCIPAL -->
+            <div class="grid-principal" style="display:grid;grid-template-columns:minmax(320px,380px) minmax(0,1fr);gap:18px;align-items:start;">
+
+                <!-- FORMULARIO -->
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h2 id="tituloFormulario">Nuevo reporte</h2>
+                            <p>Registra un hallazgo con evidencia y ubicación.</p>
                         </div>
-
+                    </div>
+                    <div class="card-body">
                         <form id="reporteForm" enctype="multipart/form-data" class="form-grid">
-                            <input type="hidden" id="reporteId">
-                            <input type="hidden" id="latitud">
-                            <input type="hidden" id="longitud">
+                            <input type="hidden" id="reporteId" />
+                            <input type="hidden" id="latitud" />
+                            <input type="hidden" id="longitud" />
+                            <input type="hidden" id="plaga" />
 
                             <div class="campo completo">
-                                <label for="cultivo">Cultivo</label>
-                                <input type="text" id="cultivo" placeholder="Ej. Maíz">
+                                <label>Cultivo</label>
+                                <input type="text" id="cultivo" placeholder="Ej. Maíz" />
                             </div>
-
                             <div class="campo">
-                                <label for="etapa">Etapa fenológica</label>
-                                <input type="text" id="etapa" placeholder="Ej. Floración">
+                                <label>Etapa fenológica</label>
+                                <input type="text" id="etapa" placeholder="Ej. Floración" />
                             </div>
-
-                            <!-- ── CAMPO PLAGA MEJORADO ── -->
                             <div class="campo">
-                                <label for="plagaSelect">Tipo de plaga</label>
-                                <div class="plaga-selector-wrap">
-                                    <select id="plagaSelect">
-                                        <option value="">Selecciona una plaga…</option>
-                                    </select>
+                                <label>Tipo de plaga</label>
+                                <select id="plagaSelect">
+                                    <option value="">Selecciona una plaga…</option>
+                                </select>
+                                <div class="plaga-info-box" id="plagaInfo"></div>
+                                <button type="button" class="btn-ver-recos" id="btnVerRecos">Ver recomendaciones</button>
+                            </div>
+
+                            <!-- ── PARCELA ── -->
+                            <div class="campo completo">
+                                <label>Parcela</label>
+                                <select id="parcelaSelect">
+                                    <option value="">Cargando parcelas…</option>
+                                </select>
+
+                                <!-- Info parcela seleccionada -->
+                                <div class="parcela-info-box" id="parcelaInfo"></div>
+
+                                <!-- Formulario nueva parcela inline -->
+                                <div class="form-nueva-parcela" id="formNuevaParcela">
+                                    <p class="np-titulo">➕ Nueva parcela</p>
+                                    <div class="form-grid">
+                                        <div class="campo">
+                                            <label>Nombre</label>
+                                            <input type="text" id="npNombre" placeholder="Ej. Campo Las Palmas" />
+                                        </div>
+                                        <div class="campo">
+                                            <label>Cultivo</label>
+                                            <input type="text" id="npCultivo" placeholder="Ej. Maíz" />
+                                        </div>
+                                        <div class="campo">
+                                            <label>Latitud</label>
+                                            <input type="number" id="npLat" placeholder="25.7398" step="0.0001" />
+                                        </div>
+                                        <div class="campo">
+                                            <label>Longitud</label>
+                                            <input type="number" id="npLng" placeholder="-108.7843" step="0.0001" />
+                                        </div>
+                                        <div class="campo">
+                                            <label>Radio monitoreo (m)</label>
+                                            <input type="number" id="npRadio" value="150" />
+                                        </div>
+                                        <div class="campo">
+                                            <label>Nombre del sensor</label>
+                                            <input type="text" id="npSensor" placeholder="Sensor-004 (opcional)" />
+                                        </div>
+                                    </div>
+                                    <div style="display:flex;gap:8px;margin-top:6px">
+                                        <button type="button" class="btn-primary" style="padding:8px 16px;font-size:.78rem" onclick="guardarNuevaParcela()">Guardar parcela</button>
+                                        <button type="button" class="btn-secondary" style="font-size:.78rem" onclick="cancelarNuevaParcela()">Cancelar</button>
+                                    </div>
+                                    <p class="msg-parcela" id="msgNuevaParcela"></p>
                                 </div>
-                                <!-- Tarjeta de síntomas al seleccionar -->
-                                <div id="plagaInfo"></div>
-                                <button type="button" id="btnVerRecos">Ver recomendaciones de tratamiento</button>
-                                <!-- Input oculto que guarda el nombre para enviarlo al backend -->
-                                <input type="hidden" id="plaga">
                             </div>
 
+                            <!-- Ubicación descriptiva (auto) -->
                             <div class="campo completo">
-                                <label for="ubicacion">Ubicación descriptiva</label>
-                                <input type="text" id="ubicacion" placeholder="Ej. Parcela norte, Los Mochis">
+                                <label>Ubicación descriptiva</label>
+                                <input type="text" id="ubicacion" placeholder="Se llena al elegir parcela…" />
                             </div>
 
+                            <!-- GPS -->
                             <div class="campo completo">
-                                <label>Ubicación GPS</label>
-                                <div class="acciones-ubicacion">
-                                    <button type="button" class="btn-secundario" id="btnUbicacion">Usar mi ubicación actual</button>
-                                    <span id="textoUbicacion" class="texto-ubicacion">Sin coordenadas seleccionadas</span>
+                                <label>Coordenadas GPS</label>
+                                <div class="gps-wrap">
+                                    <div class="gps-row">
+                                        <button type="button" class="btn-secondary" id="btnUbicacion" style="padding:7px 12px;font-size:.74rem;">📍 GPS automático</button>
+                                        <button type="button" class="gps-toggle" id="btnGpsManual">Ingresar manualmente</button>
+                                    </div>
+                                    <span class="gps-texto" id="textoUbicacion">Sin coordenadas</span>
+                                    <div class="gps-manual-row oculto" id="gpsManualRow">
+                                        <input type="text" id="latManual" placeholder="Latitud  Ej. 25.7905" />
+                                        <input type="text" id="lngManual" placeholder="Longitud  Ej. -108.9859" />
+                                        <button type="button" class="btn-secondary" id="btnAplicarManual" style="padding:7px 11px;font-size:.73rem;white-space:nowrap;">Aplicar</button>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="campo completo">
-                                <label for="descripcion">Descripción</label>
-                                <textarea id="descripcion" placeholder="Describe el hallazgo"></textarea>
+                                <label>Descripción</label>
+                                <textarea id="descripcion" placeholder="Describe el hallazgo en detalle…"></textarea>
                             </div>
-
                             <div class="campo completo">
-                                <label for="imagen">Imagen</label>
-                                <input type="file" id="imagen" accept="image/*">
+                                <label>Imagen evidencia</label>
+                                <input type="file" id="imagen" accept="image/*" style="font-size:.76rem;" />
                             </div>
-
-                            <div class="acciones-formulario completo">
-                                <button type="submit" class="btn-principal" id="btnGuardar">Guardar reporte</button>
-                                <button type="button" class="btn-secundario oculto" id="btnCancelarEdicion">Cancelar edición</button>
+                            <div class="form-acciones">
+                                <button type="submit" class="btn-primary" id="btnGuardar">Guardar reporte</button>
+                                <button type="button" class="btn-secondary oculto" id="btnCancelarEdicion">Cancelar</button>
                             </div>
                         </form>
-
-                        <p id="mensajeReporte" class="mensaje"></p>
+                        <p class="mensaje-form" id="mensajeReporte"></p>
                     </div>
                 </div>
 
-                <div class="panel-derecha">
-                    <div class="modulo-card historial-card">
-                        <div class="modulo-header modulo-header-columna">
-                            <div>
-                                <h2>Historial de reportes</h2>
-                                <p>Consulta, edita o elimina los reportes registrados.</p>
-                            </div>
-                            <div class="herramientas-historial">
-                                <div class="filtros-vista">
-                                    <button type="button" class="btn-filtro activo" id="btnVistaTodos">Todos</button>
-                                    <button type="button" class="btn-filtro" id="btnVistaMios">Mis reportes</button>
-                                </div>
-                                <div class="filtros-box">
-                                    <input type="text" id="busquedaReporte" placeholder="Buscar por cultivo o plaga">
-                                </div>
-                            </div>
+                <!-- DERECHA -->
+                <div style="display:flex;flex-direction:column;gap:18px;">
+                    <!-- HISTORIAL -->
+                    <div class="card">
+                        <div class="card-head">
+                            <div><h2>Historial de reportes</h2><p>Consulta, edita o elimina los registros.</p></div>
                         </div>
-                        <div id="contenedorReportes" class="lista-reportes">
-                            <p>Cargando reportes...</p>
+                        <div class="hist-tools">
+                            <div class="tab-group">
+                                <button class="tab-btn activo" id="btnVistaTodos">Todos</button>
+                                <button class="tab-btn" id="btnVistaMios">Mis reportes</button>
+                            </div>
+                            <input type="text" class="search-input" id="busquedaReporte" placeholder="Buscar cultivo o plaga…" />
+                        </div>
+                        <div class="lista-reportes" id="contenedorReportes">
+                            <p style="color:var(--text3);font-size:.78rem;">Cargando reportes…</p>
                         </div>
                     </div>
-
-                    <div class="modulo-card mapa-card">
-                        <div class="modulo-header">
-                            <div>
-                                <h2>Mapa de reportes</h2>
-                                <p>Visualiza los reportes con coordenadas registradas.</p>
-                            </div>
+                    <!-- MAPA -->
+                    <div class="card">
+                        <div class="card-head">
+                            <div><h2>Mapa de reportes</h2><p>Visualiza los reportes con coordenadas GPS.</p></div>
                         </div>
-                        <div id="mapaReportes"></div>
+                        <div class="card-body" style="padding-top:0;">
+                            <div id="mapaReportes"></div>
+                        </div>
                     </div>
                 </div>
-            </section>
-        </main>
+
+            </div>
+        </div>
     </div>
 
-    <!-- ── MODAL DE RECOMENDACIONES ── -->
-    <div id="modalRecos">
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modalRecos">
         <div class="modal-box">
             <h3 id="modalTitulo">Recomendaciones</h3>
-            <div class="modal-sintomas" id="modalSintomas"></div>
+            <div class="modal-sub" id="modalCultivos"></div>
+            <div class="sintomas-box" id="modalSintomas"></div>
             <div id="modalLista"></div>
-            <button class="modal-cerrar" onclick="cerrarModal()">Cerrar</button>
+            <button class="modal-close" onclick="cerrarModal()">Cerrar</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="dashboard.js"></script>
     <script>
-    // ── CARGAR PLAGAS EN EL SELECT ────────────────────────────
-    let plagasData = [];
+        // ── DARK MODE ─────────────────────────────────────────
+        const html = document.documentElement;
+        const t = localStorage.getItem('agrosyph-theme') || 'light';
+        html.setAttribute('data-theme', t);
+        document.getElementById('darkToggle').textContent = t === 'dark' ? '☀️' : '🌙';
+        document.getElementById('darkToggle').addEventListener('click', () => {
+            const nt = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', nt);
+            localStorage.setItem('agrosyph-theme', nt);
+            document.getElementById('darkToggle').textContent = nt === 'dark' ? '☀️' : '🌙';
+        });
 
-    async function cargarPlagasSelect() {
-        try {
-            const res = await fetch('/api/plagas');
-            plagasData = await res.json();
-            const sel = document.getElementById('plagaSelect');
-            plagasData.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = p.nombre;
-                sel.appendChild(opt);
-            });
-        } catch(e) {
-            console.error('Error cargando plagas:', e);
+        // ── SIDEBAR MOBILE ────────────────────────────────────
+        document.getElementById('hamburger').addEventListener('click', () =>
+            document.getElementById('sidebar').classList.toggle('open'));
+
+        // ── USUARIO ───────────────────────────────────────────
+        const usr = JSON.parse(localStorage.getItem('usuarioAgrosyph') || 'null');
+        if (usr) {
+            document.getElementById('avatarLetra').textContent = usr.nombre.charAt(0).toUpperCase();
+            document.getElementById('saludoUsuario').textContent = usr.nombre;
         }
-    }
-    cargarPlagasSelect();
+        document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+            localStorage.removeItem('usuarioAgrosyph');
+            window.location.href = 'index.html';
+        });
 
-    // ── AL SELECCIONAR PLAGA ──────────────────────────────────
-    document.getElementById('plagaSelect').addEventListener('change', function() {
-        const id = parseInt(this.value);
-        const info   = document.getElementById('plagaInfo');
-        const btnRec = document.getElementById('btnVerRecos');
-        const inputPlaga = document.getElementById('plaga');
+        // ── SENSOR CHIP ───────────────────────────────────────
+        async function pollearSensor() {
+            try {
+                const d = await fetch('/api/sensor/ultima').then(r => r.json());
+                if (!d) return;
+                document.getElementById('sensorDot').className = 'sdot ok';
+                const seg = Math.floor((Date.now() - new Date(d.fecha)) / 1000);
+                document.getElementById('sensorTexto').textContent =
+                    `pH ${parseFloat(d.ph).toFixed(1)} · ${seg < 60 ? seg + 's' : Math.floor(seg / 60) + 'min'}`;
+            } catch (e) {
+                document.getElementById('sensorDot').className = 'sdot err';
+                document.getElementById('sensorTexto').textContent = 'Sin sensor';
+            }
+        }
+        pollearSensor();
+        setInterval(pollearSensor, 8000);
 
-        if (!id) {
-            info.style.display = 'none';
-            btnRec.style.display = 'none';
-            inputPlaga.value = '';
-            return;
+        // ── GPS MANUAL ────────────────────────────────────────
+        document.getElementById('btnGpsManual').addEventListener('click', () => {
+            const row = document.getElementById('gpsManualRow');
+            const isOculto = row.classList.contains('oculto');
+            row.classList.toggle('oculto', !isOculto);
+            document.getElementById('btnGpsManual').textContent =
+                isOculto ? 'Ocultar manual' : 'Ingresar manualmente';
+        });
+
+        document.getElementById('btnAplicarManual').addEventListener('click', () => {
+            const lat = document.getElementById('latManual').value.trim();
+            const lng = document.getElementById('lngManual').value.trim();
+            if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+                document.getElementById('textoUbicacion').textContent = '⚠️ Coordenadas inválidas'; return;
+            }
+            document.getElementById('latitud').value  = parseFloat(lat).toFixed(7);
+            document.getElementById('longitud').value = parseFloat(lng).toFixed(7);
+            document.getElementById('textoUbicacion').textContent =
+                `Lat: ${parseFloat(lat).toFixed(4)}, Lng: ${parseFloat(lng).toFixed(4)}`;
+            document.getElementById('gpsManualRow').classList.add('oculto');
+            document.getElementById('btnGpsManual').textContent = 'Ingresar manualmente';
+        });
+
+        document.getElementById('btnUbicacion').addEventListener('click', () => {
+            if (!navigator.geolocation) { document.getElementById('textoUbicacion').textContent = 'No soportado'; return; }
+            document.getElementById('textoUbicacion').textContent = 'Obteniendo…';
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('latitud').value  = pos.coords.latitude.toFixed(7);
+                document.getElementById('longitud').value = pos.coords.longitude.toFixed(7);
+                document.getElementById('textoUbicacion').textContent =
+                    `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
+            }, () => { document.getElementById('textoUbicacion').textContent = 'No se pudo obtener'; });
+        });
+
+        // ── SELECTOR DE PARCELAS ──────────────────────────────
+        let parcelasDisponibles = [];
+
+        async function cargarSelectorParcelas() {
+            try {
+                const res = await fetch('/api/parcelas/selector');
+                parcelasDisponibles = await res.json();
+                const sel = document.getElementById('parcelaSelect');
+                sel.innerHTML = '<option value="">— Selecciona una parcela —</option>';
+
+                const conSensor = parcelasDisponibles.filter(p => p.sensor_id);
+                const sinSensor = parcelasDisponibles.filter(p => !p.sensor_id);
+
+                if (conSensor.length) {
+                    const grp = document.createElement('optgroup');
+                    grp.label = '📡 Con sensor activo';
+                    conSensor.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = `${p.nombre} — ${p.cultivo || 'sin cultivo'}`;
+                        grp.appendChild(opt);
+                    });
+                    sel.appendChild(grp);
+                }
+                if (sinSensor.length) {
+                    const grp = document.createElement('optgroup');
+                    grp.label = '📍 Sin sensor';
+                    sinSensor.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = `${p.nombre} — ${p.cultivo || 'sin cultivo'}`;
+                        grp.appendChild(opt);
+                    });
+                    sel.appendChild(grp);
+                }
+                const sep = document.createElement('option');
+                sep.disabled = true; sep.textContent = '──────────────────';
+                sel.appendChild(sep);
+                const nueva = document.createElement('option');
+                nueva.value = '__nueva__'; nueva.textContent = '➕ Agregar nueva parcela…';
+                sel.appendChild(nueva);
+
+            } catch (e) { console.error('Error cargando parcelas:', e); }
         }
 
-        const plaga = plagasData.find(p => p.id === id);
-        if (!plaga) return;
+        document.getElementById('parcelaSelect').addEventListener('change', function () {
+            const val = this.value;
+            const infoBox   = document.getElementById('parcelaInfo');
+            const formNueva = document.getElementById('formNuevaParcela');
 
-        // Guardar nombre en el input oculto para el backend existente
-        inputPlaga.value = plaga.nombre;
-
-        // Mostrar síntomas
-        info.style.display = 'block';
-        info.innerHTML = `
-            <strong>Síntomas</strong>
-            ${plaga.sintomas}
-            <div><span class="cultivos-tag">🌱 ${plaga.cultivos_afectados}</span></div>
-        `;
-
-        btnRec.style.display = 'inline-block';
-    });
-
-    // ── BOTÓN VER RECOMENDACIONES ─────────────────────────────
-    document.getElementById('btnVerRecos').addEventListener('click', async () => {
-        const id = parseInt(document.getElementById('plagaSelect').value);
-        if (!id) return;
-        const plaga = plagasData.find(p => p.id === id);
-        await abrirModal(id, plaga);
-    });
-
-    // ── MODAL ─────────────────────────────────────────────────
-    async function abrirModal(id, plaga) {
-        document.getElementById('modalTitulo').textContent = 'Recomendaciones — ' + plaga.nombre;
-        document.getElementById('modalSintomas').textContent = '🔍 Síntomas: ' + plaga.sintomas;
-        document.getElementById('modalLista').innerHTML = '<p style="color:#6b8c75;font-size:.82rem">Cargando…</p>';
-        document.getElementById('modalRecos').classList.add('abierto');
-
-        try {
-            const res  = await fetch(`/api/plagas/${id}/recomendaciones`);
-            const recos = await res.json();
-
-            if (!recos.length) {
-                document.getElementById('modalLista').innerHTML = '<p style="color:#6b8c75;font-size:.82rem">No hay recomendaciones registradas.</p>';
+            if (val === '__nueva__') {
+                formNueva.style.display = 'block';
+                infoBox.style.display   = 'none';
+                document.getElementById('latitud').value   = '';
+                document.getElementById('longitud').value  = '';
+                document.getElementById('ubicacion').value = '';
+                document.getElementById('textoUbicacion').textContent = 'Sin coordenadas';
                 return;
             }
+            formNueva.style.display = 'none';
+            if (!val) { infoBox.style.display = 'none'; return; }
 
-            document.getElementById('modalLista').innerHTML = recos.map(r => `
-                <div class="reco-item">
-                    <div class="reco-trat">${r.tratamiento}</div>
-                    <div class="reco-det">
-                        <span>Productos:</span> ${r.productos_sugeridos || '—'} &nbsp;|&nbsp;
-                        <span>Dosis:</span> ${r.dosis || '—'}
-                    </div>
-                </div>`
-            ).join('');
-        } catch(e) {
-            document.getElementById('modalLista').innerHTML = '<p style="color:#c1392b;font-size:.82rem">Error al cargar recomendaciones.</p>';
+            const parcela = parcelasDisponibles.find(p => p.id == val);
+            if (!parcela) return;
+
+            document.getElementById('latitud').value   = parcela.latitud;
+            document.getElementById('longitud').value  = parcela.longitud;
+            document.getElementById('ubicacion').value = parcela.nombre;
+            document.getElementById('textoUbicacion').textContent =
+                `Lat: ${Number(parcela.latitud).toFixed(5)}, Lng: ${Number(parcela.longitud).toFixed(5)}`;
+
+            const sensorTxt = parcela.sensor_id
+                ? `<span style="color:var(--g600);font-weight:600">📡 ${parcela.sensor_nombre} · activo</span>`
+                : `<span style="color:var(--text3)">Sin sensor asignado</span>`;
+
+            infoBox.style.display = 'block';
+            infoBox.innerHTML = `
+                <strong>${parcela.nombre}</strong> · ${parcela.cultivo || 'sin cultivo'}<br>
+                ${sensorTxt}<br>
+                <span style="font-family:var(--mono);font-size:.65rem;color:var(--text3)">
+                    ${Number(parcela.latitud).toFixed(5)}, ${Number(parcela.longitud).toFixed(5)}
+                </span>`;
+        });
+
+        async function guardarNuevaParcela() {
+            const nombre  = document.getElementById('npNombre').value.trim();
+            const cultivo = document.getElementById('npCultivo').value.trim();
+            const lat     = parseFloat(document.getElementById('npLat').value);
+            const lng     = parseFloat(document.getElementById('npLng').value);
+            const radio   = parseInt(document.getElementById('npRadio').value) || 150;
+            const sensor  = document.getElementById('npSensor').value.trim();
+            const msg     = document.getElementById('msgNuevaParcela');
+
+            if (!nombre || isNaN(lat) || isNaN(lng)) {
+                msg.style.color = 'var(--r600)';
+                msg.textContent = 'Nombre, latitud y longitud son obligatorios'; return;
+            }
+            msg.style.color = 'var(--text3)'; msg.textContent = 'Guardando…';
+            try {
+                const res  = await fetch('/api/parcelas/nueva-con-sensor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, cultivo, latitud: lat, longitud: lng, radio_metros: radio, nombre_sensor: sensor })
+                });
+                const data = await res.json();
+                if (!res.ok) { msg.style.color = 'var(--r600)'; msg.textContent = data.mensaje; return; }
+                msg.style.color = 'var(--g600)'; msg.textContent = `✓ ${data.mensaje}`;
+                await cargarSelectorParcelas();
+                const sel = document.getElementById('parcelaSelect');
+                sel.value = data.id_parcela;
+                sel.dispatchEvent(new Event('change'));
+                setTimeout(() => { document.getElementById('formNuevaParcela').style.display = 'none'; }, 1800);
+            } catch (e) { msg.style.color = 'var(--r600)'; msg.textContent = 'Error al conectar'; }
         }
-    }
 
-    function cerrarModal() {
-        document.getElementById('modalRecos').classList.remove('abierto');
-    }
-
-    // Cerrar modal al hacer clic fuera
-    document.getElementById('modalRecos').addEventListener('click', function(e) {
-        if (e.target === this) cerrarModal();
-    });
-
-    // ── AL EDITAR UN REPORTE: restaurar el select ─────────────
-    // dashboard.js llama window.cargarEnFormulario(reporte) al editar
-    // Sobreescribimos para que también actualice el select
-    const _cargarOriginal = window.cargarEnFormulario;
-    window.cargarEnFormulario = function(reporte) {
-        if (_cargarOriginal) _cargarOriginal(reporte);
-
-        // Buscar la plaga por nombre y seleccionarla
-        const sel = document.getElementById('plagaSelect');
-        const match = plagasData.find(p =>
-            p.nombre.toLowerCase() === (reporte.tipo_plaga || '').toLowerCase()
-        );
-        if (match) {
-            sel.value = match.id;
-            sel.dispatchEvent(new Event('change'));
-        } else {
-            // Si la plaga no está en el catálogo, mostrar el nombre en el input oculto
-            document.getElementById('plaga').value = reporte.tipo_plaga || '';
+        function cancelarNuevaParcela() {
+            document.getElementById('formNuevaParcela').style.display = 'none';
+            document.getElementById('parcelaSelect').value = '';
+            document.getElementById('msgNuevaParcela').textContent = '';
         }
-    };
+
+        cargarSelectorParcelas();
+
+        // ── PLAGAS SELECT ─────────────────────────────────────
+        let plagasData = [];
+        async function cargarPlagasSelect() {
+            try {
+                plagasData = await fetch('/api/plagas').then(r => r.json());
+                const sel = document.getElementById('plagaSelect');
+                plagasData.forEach(p => {
+                    const o = document.createElement('option');
+                    o.value = p.id; o.textContent = p.nombre; sel.appendChild(o);
+                });
+            } catch (e) { }
+        }
+        cargarPlagasSelect();
+
+        document.getElementById('plagaSelect').addEventListener('change', function () {
+            const id = parseInt(this.value);
+            const info = document.getElementById('plagaInfo');
+            const btn  = document.getElementById('btnVerRecos');
+            document.getElementById('plaga').value = '';
+            if (!id) { info.style.display = 'none'; btn.style.display = 'none'; return; }
+            const p = plagasData.find(x => x.id === id); if (!p) return;
+            document.getElementById('plaga').value = p.nombre;
+            info.style.display = 'block';
+            info.innerHTML = `<strong>Síntomas</strong>${p.sintomas}<div><span class="cultivo-tag">🌱 ${p.cultivos_afectados}</span></div>`;
+            btn.style.display = 'inline-block';
+        });
+
+        document.getElementById('btnVerRecos').addEventListener('click', async () => {
+            const id = parseInt(document.getElementById('plagaSelect').value);
+            if (id) await abrirModal(id, plagasData.find(p => p.id === id));
+        });
+
+        // ── MODAL ─────────────────────────────────────────────
+        async function abrirModal(id, p) {
+            document.getElementById('modalTitulo').textContent   = 'Recomendaciones — ' + p.nombre;
+            document.getElementById('modalSintomas').textContent = '🔍 Síntomas: ' + p.sintomas;
+            document.getElementById('modalCultivos').textContent = '🌱 Cultivos: ' + p.cultivos_afectados;
+            document.getElementById('modalLista').innerHTML = '<p style="color:var(--text3);font-size:.76rem">Cargando…</p>';
+            document.getElementById('modalRecos').classList.add('abierto');
+            try {
+                const recs = await fetch(`/api/plagas/${id}/recomendaciones`).then(r => r.json());
+                document.getElementById('modalLista').innerHTML = recs.length
+                    ? recs.map(r => `<div class="reco-item"><div class="reco-trat">${r.tratamiento}</div><div class="reco-det"><b>Productos:</b> ${r.productos_sugeridos || '—'} · <b>Dosis:</b> ${r.dosis || '—'}</div></div>`).join('')
+                    : '<p style="color:var(--text3);font-size:.76rem">Sin recomendaciones.</p>';
+            } catch (e) { }
+        }
+        function cerrarModal() { document.getElementById('modalRecos').classList.remove('abierto'); }
+        document.getElementById('modalRecos').addEventListener('click', e => {
+            if (e.target === document.getElementById('modalRecos')) cerrarModal();
+        });
+
+        // ── PATCH EDICIÓN ─────────────────────────────────────
+        const _orig = window.cargarEnFormulario;
+        window.cargarEnFormulario = function (rep) {
+            if (_orig) _orig(rep);
+            const sel = document.getElementById('plagaSelect');
+            const match = plagasData.find(p => p.nombre.toLowerCase() === (rep.tipo_plaga || '').toLowerCase());
+            if (match) { sel.value = match.id; sel.dispatchEvent(new Event('change')); }
+            else document.getElementById('plaga').value = rep.tipo_plaga || '';
+        };
     </script>
 </body>
 </html>

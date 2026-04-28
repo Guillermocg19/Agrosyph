@@ -1,60 +1,273 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agrosyph - Acceso</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agrosyph — Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --g800:#163d26;--g700:#1f5535;--g600:#2d6a4f;--g500:#40916c;
+  --g400:#52b788;--g300:#74c69d;--g100:#d8f3dc;--g50:#f0faf3;
+  --bg:#f2f5f3;--surface:#ffffff;--border:#dde6e0;
+  --text:#0c1f13;--text2:#3d5c48;--text3:#7a9d87;
+  --r600:#c1392b;--shadow-lg:0 8px 32px rgba(12,31,19,.12);
+  --font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+[data-theme="dark"] {
+  --bg:#0d1a12;--surface:#162119;--border:#243a2c;
+  --text:#e0ede5;--text2:#9dbfaa;--text3:#5a8068;
+  --g50:#0f1e14;--g100:#152a1c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);transition:background .3s,color .3s;}
+body{background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+
+/* PANEL IZQUIERDO */
+.panel-left {
+  width:42%;
+  background:linear-gradient(155deg, var(--g800) 0%, #0d2b1a 100%);
+  display:flex;flex-direction:column;
+  padding:48px 44px;
+  position:relative;overflow:hidden;
+}
+.panel-left::before {
+  content:'';position:absolute;
+  width:400px;height:400px;border-radius:50%;
+  background:rgba(82,183,136,.07);
+  top:-100px;right:-100px;
+}
+.panel-left::after {
+  content:'';position:absolute;
+  width:280px;height:280px;border-radius:50%;
+  background:rgba(82,183,136,.05);
+  bottom:-60px;left:-60px;
+}
+.brand { margin-bottom:auto; }
+.brand h1 { font-size:2rem;font-weight:700;color:#fff;letter-spacing:-.5px;line-height:1; }
+.brand h1 span { color:var(--g300); }
+.brand p { font-size:.78rem;color:rgba(255,255,255,.38);margin-top:5px;font-family:var(--mono); }
+
+.hero-text { margin:auto 0 0; position:relative;z-index:1; }
+.hero-text h2 { font-size:1.5rem;font-weight:700;color:#fff;line-height:1.35;margin-bottom:14px;letter-spacing:-.3px; }
+.hero-text h2 em { color:var(--g300);font-style:normal; }
+.features { display:flex;flex-direction:column;gap:10px; }
+.feature { display:flex;align-items:center;gap:10px; }
+.feature-dot { width:26px;height:26px;border-radius:50%;background:rgba(82,183,136,.15);border:1px solid rgba(82,183,136,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px; }
+.feature span { font-size:.8rem;color:rgba(255,255,255,.65);line-height:1.4; }
+
+/* PANEL DERECHO */
+.panel-right {
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 24px;position:relative;
+}
+.dark-btn {
+  position:absolute;top:20px;right:20px;
+  width:36px;height:36px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--border);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:all .2s;color:var(--text);
+}
+.dark-btn:hover { background:var(--g50);border-color:var(--g100); }
+
+.auth-box {
+  width:100%;max-width:400px;
+}
+.auth-box-header { text-align:center;margin-bottom:28px; }
+.auth-box-header h2 { font-size:1.35rem;font-weight:700;color:var(--text); }
+.auth-box-header p { font-size:.78rem;color:var(--text3);margin-top:4px; }
+
+/* Tabs */
+.tabs {
+  display:flex;gap:0;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:12px;padding:4px;margin-bottom:24px;
+}
+.tab {
+  flex:1;border:none;background:transparent;
+  color:var(--text3);font-family:var(--font);font-size:.82rem;font-weight:600;
+  padding:9px;border-radius:9px;cursor:pointer;transition:all .2s;
+}
+.tab:hover { color:var(--text); }
+.tab.activo { background:var(--surface);color:var(--text);box-shadow:0 1px 6px rgba(12,31,19,.08); }
+
+/* Formulario */
+.form-panel { display:none; }
+.form-panel.visible { display:block; }
+.campo { display:flex;flex-direction:column;margin-bottom:14px; }
+.campo label { font-size:.68rem;font-weight:700;color:var(--text2);margin-bottom:5px;letter-spacing:.4px;text-transform:uppercase; }
+.campo input {
+  padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:var(--font);font-size:.85rem;background:var(--surface);color:var(--text);
+  outline:none;transition:border-color .18s,box-shadow .18s;
+}
+.campo input:focus { border-color:var(--g500);box-shadow:0 0 0 3px rgba(64,145,108,.1); }
+.btn-submit {
+  width:100%;padding:11px;border:none;border-radius:10px;
+  background:var(--g600);color:#fff;font-family:var(--font);
+  font-size:.88rem;font-weight:700;cursor:pointer;
+  transition:background .18s,transform .15s;margin-top:2px;
+}
+.btn-submit:hover { background:var(--g500);transform:translateY(-1px); }
+.mensaje { font-size:.75rem;font-weight:600;min-height:16px;margin-top:8px;text-align:center; }
+.mensaje.error { color:var(--r600); }
+.mensaje.ok { color:var(--g600); }
+
+/* divider */
+.divider { display:flex;align-items:center;gap:10px;margin:16px 0; }
+.divider hr { flex:1;border:none;border-top:1px solid var(--border); }
+.divider span { font-size:.68rem;color:var(--text3);white-space:nowrap; }
+
+@media(max-width:700px){
+  body{flex-direction:column;}
+  .panel-left{width:100%;padding:28px 24px 24px;}
+  .hero-text{display:none;}
+  .panel-right{padding:24px 16px;}
+}
+</style>
 </head>
-<body>
-    <div class="contenedor">
-        <div class="panel-izquierdo">
-            <h1>Agrosyph</h1>
-            <p>
-                Plataforma de monitoreo y reporte de plagas para cultivos,
-                con alertas y seguimiento por microzona.
-            </p>
-        </div>
+<body data-theme="light">
 
-        <div class="panel-derecho">
-            <div class="tabs">
-                <button id="btnLogin" class="tab activo">Iniciar sesión</button>
-                <button id="btnRegistro" class="tab">Registrarse</button>
-            </div>
+<!-- IZQUIERDO -->
+<div class="panel-left">
+  <div class="brand">
+    <h1>Agro<span>syph</span></h1>
+    <p>plataforma agrícola digital</p>
+  </div>
+  <div class="hero-text">
+    <h2>Detecta plagas.<br/><em>Actúa a tiempo.</em><br/>Protege tu cosecha.</h2>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-dot">📍</div>
+        <span>Reportes con ubicación GPS exacta</span>
+      </div>
+      <div class="feature">
+        <div class="feature-dot">🌱</div>
+        <span>Monitoreo de pH y humedad en tiempo real</span>
+      </div>
+      <div class="feature">
+        <div class="feature-dot">💊</div>
+        <span>Recomendaciones de tratamiento por plaga</span>
+      </div>
+    </div>
+  </div>
+</div>
 
-            <div id="formLogin" class="formulario visible">
-                <h2>Iniciar sesión</h2>
-                <form id="loginForm">
-                    <label for="loginCorreo">Correo</label>
-                    <input type="email" id="loginCorreo" placeholder="Ingresa tu correo">
+<!-- DERECHO -->
+<div class="panel-right">
+  <button class="dark-btn" id="darkToggle" title="Modo oscuro">🌙</button>
 
-                    <label for="loginPassword">Contraseña</label>
-                    <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña">
-
-                    <button type="submit" class="btn-principal">Entrar</button>
-                </form>
-            </div>
-
-            <div id="formRegistro" class="formulario oculto">
-                <h2>Registro</h2>
-                <form id="registroForm">
-                    <label for="registroNombre">Nombre completo</label>
-                    <input type="text" id="registroNombre" placeholder="Ingresa tu nombre">
-
-                    <label for="registroCorreo">Correo</label>
-                    <input type="email" id="registroCorreo" placeholder="Ingresa tu correo">
-
-                    <label for="registroPassword">Contraseña</label>
-                    <input type="password" id="registroPassword" placeholder="Crea una contraseña">
-
-                    <button type="submit" class="btn-principal">Crear cuenta</button>
-                </form>
-            </div>
-
-            <p id="mensaje" class="mensaje"></p>
-        </div>
+  <div class="auth-box">
+    <div class="auth-box-header">
+      <h2 id="authTitulo">Bienvenido</h2>
+      <p id="authSub">Inicia sesión para continuar</p>
     </div>
 
-    <script src="app.js"></script>
+    <div class="tabs">
+      <button class="tab activo" id="tabLogin" onclick="mostrarTab('login')">Iniciar sesión</button>
+      <button class="tab" id="tabRegistro" onclick="mostrarTab('registro')">Registrarse</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="form-panel visible" id="panelLogin">
+      <div class="campo">
+        <label>Correo electrónico</label>
+        <input type="email" id="loginCorreo" placeholder="usuario@correo.com" autocomplete="email"/>
+      </div>
+      <div class="campo">
+        <label>Contraseña</label>
+        <input type="password" id="loginPass" placeholder="Tu contraseña" autocomplete="current-password"/>
+      </div>
+      <button class="btn-submit" onclick="iniciarSesion()">Entrar</button>
+      <p class="mensaje" id="msgLogin"></p>
+    </div>
+
+    <!-- REGISTRO -->
+    <div class="form-panel" id="panelRegistro">
+      <div class="campo">
+        <label>Nombre completo</label>
+        <input type="text" id="regNombre" placeholder="Ej. Juan Pérez" autocomplete="name"/>
+      </div>
+      <div class="campo">
+        <label>Correo electrónico</label>
+        <input type="email" id="regCorreo" placeholder="usuario@correo.com" autocomplete="email"/>
+      </div>
+      <div class="campo">
+        <label>Contraseña</label>
+        <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password"/>
+      </div>
+      <button class="btn-submit" onclick="registrar()">Crear cuenta</button>
+      <p class="mensaje" id="msgRegistro"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Dark mode ──
+const html = document.documentElement;
+const saved = localStorage.getItem('agrosyph-theme') || 'light';
+html.setAttribute('data-theme', saved);
+document.getElementById('darkToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+
+document.getElementById('darkToggle').addEventListener('click', () => {
+  const t = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', t);
+  localStorage.setItem('agrosyph-theme', t);
+  document.getElementById('darkToggle').textContent = t === 'dark' ? '☀️' : '🌙';
+});
+
+// ── Tabs ──
+function mostrarTab(tab) {
+  document.getElementById('panelLogin').classList.toggle('visible', tab === 'login');
+  document.getElementById('panelRegistro').classList.toggle('visible', tab === 'registro');
+  document.getElementById('tabLogin').classList.toggle('activo', tab === 'login');
+  document.getElementById('tabRegistro').classList.toggle('activo', tab === 'registro');
+  document.getElementById('authTitulo').textContent = tab === 'login' ? 'Bienvenido' : 'Crear cuenta';
+  document.getElementById('authSub').textContent = tab === 'login' ? 'Inicia sesión para continuar' : 'Regístrate para empezar';
+}
+
+// ── Login ──
+async function iniciarSesion() {
+  const correo = document.getElementById('loginCorreo').value.trim();
+  const password = document.getElementById('loginPass').value.trim();
+  const msg = document.getElementById('msgLogin');
+  msg.textContent = '';
+  if (!correo || !password) { msg.textContent = 'Completa todos los campos'; msg.className = 'mensaje error'; return; }
+  try {
+    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({correo, password}) });
+    const d = await r.json();
+    if (!r.ok) { msg.textContent = d.mensaje; msg.className = 'mensaje error'; return; }
+    localStorage.setItem('usuarioAgrosyph', JSON.stringify(d.usuario));
+    msg.textContent = '¡Bienvenido! Redirigiendo…';
+    msg.className = 'mensaje ok';
+    setTimeout(() => window.location.href = 'dashboard.html', 700);
+  } catch(e) { msg.textContent = 'Error de conexión'; msg.className = 'mensaje error'; }
+}
+
+// ── Registro ──
+async function registrar() {
+  const nombre = document.getElementById('regNombre').value.trim();
+  const correo = document.getElementById('regCorreo').value.trim();
+  const password = document.getElementById('regPass').value.trim();
+  const msg = document.getElementById('msgRegistro');
+  msg.textContent = '';
+  if (!nombre || !correo || !password) { msg.textContent = 'Completa todos los campos'; msg.className = 'mensaje error'; return; }
+  if (password.length < 6) { msg.textContent = 'La contraseña debe tener al menos 6 caracteres'; msg.className = 'mensaje error'; return; }
+  try {
+    const r = await fetch('/api/registro', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nombre, correo, password}) });
+    const d = await r.json();
+    if (!r.ok) { msg.textContent = d.mensaje; msg.className = 'mensaje error'; return; }
+    msg.textContent = 'Cuenta creada. Inicia sesión.';
+    msg.className = 'mensaje ok';
+    setTimeout(() => mostrarTab('login'), 1200);
+  } catch(e) { msg.textContent = 'Error de conexión'; msg.className = 'mensaje error'; }
+}
+
+// Enter para enviar
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('panelLogin').classList.contains('visible')) iniciarSesion();
+  else registrar();
+});
+</script>
 </body>
 </html>
